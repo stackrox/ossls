@@ -3,6 +3,7 @@ package config
 import (
 	"io/ioutil"
 
+	"github.com/stackrox/ossls/resolver"
 	"gopkg.in/yaml.v2"
 )
 
@@ -11,13 +12,8 @@ type Config struct {
 }
 
 type ResolverConfig struct {
-	Dep  *DepResolver  `yaml:"dep"`
-	Yarn *YarnResolver `yaml:"yarn"`
-}
-
-type DepResolver struct {
-	VendorDir string `yaml:"vendor-dir"`
-	LockFile  string `yaml:"lock-file"`
+	Dep  *resolver.DepResolver `yaml:"dep"`
+	Yarn *YarnResolver         `yaml:"yarn"`
 }
 
 type YarnResolver struct {
