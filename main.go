@@ -32,6 +32,19 @@ func mainCmd() error {
 
 	fmt.Printf("Config: %+v\n", cfg)
 
+	deps, err := cfg.Resolvers.Dep.Repos()
+	if err != nil {
+		return err
+	}
+
+	for index, dep := range deps {
+		ref := dep.Version
+		if ref == "" {
+			ref = dep.Reference
+		}
+		fmt.Printf("[%d/%d] %s @%s\n", index+1, len(deps), dep.Name, ref)
+	}
+
 	return nil
 }
 
