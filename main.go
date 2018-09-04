@@ -9,9 +9,21 @@ import (
 	"github.com/stackrox/ossls/config"
 )
 
+var (
+	version = "development"
+)
+
 func mainCmd() error {
-	configFlag := flag.String("config", ".ossls.yml", "")
+	var (
+		configFlag  = flag.String("config", ".ossls.yml", "Path to configuration file.")
+		versionFlag = flag.Bool("version", false, "Displays the version and exits.")
+	)
 	flag.Parse()
+
+	if *versionFlag == true {
+		fmt.Println(version)
+		return nil
+	}
 
 	cfg, err := config.Load(*configFlag)
 	if err != nil {
