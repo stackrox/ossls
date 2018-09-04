@@ -35,11 +35,12 @@ jobs:
     - run:
         name: Build binaries
         command: |
+          version="$(git describe --tags)"
           CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a \
-            -ldflags="-s -w" \
+            -ldflags="-s -w -X main.version=$version" \
             -o artifacts/ossls_darwin_amd64 .
           CGO_ENABLED=0 GOOS=darwin GOARCH=386 go build -a \
-            -ldflags="-s -w" \
+            -ldflags="-s -w -X main.version=$version" \
             -o artifacts/ossls_darwin_386 .
     - run:
         name: Compress binary
