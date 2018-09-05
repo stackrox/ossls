@@ -17,6 +17,7 @@ jobs:
           gofiles="$(find . -name '*.go' | grep -v /vendor/)"
           test -z "$(gofmt -l -s  $gofiles)"
           test -z "$(goimports -l $gofiles)"
+          go test -v ./...
 
   build:
     docker:
