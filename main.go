@@ -42,7 +42,7 @@ func mainCmd() error {
 		if ref == "" {
 			ref = dep.Reference
 		}
-		fmt.Printf("[%d/%d] %s @%s\n", index+1, len(deps), dep.Name, ref)
+		fmt.Printf("[%d/%d] %s @%s (%s)\n", index+1, len(deps), dep.Name, ref, dep.Path)
 	}
 
 	return nil
