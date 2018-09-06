@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/stackrox/ossls/audit"
 	"github.com/stackrox/ossls/config"
 	"github.com/stackrox/ossls/resolver"
 )
@@ -53,13 +54,7 @@ func mainCmd() error {
 		deps = append(deps, dep)
 	}
 
-	for index, dep := range deps {
-		ref := dep.Version
-		if ref == "" {
-			ref = dep.Reference
-		}
-		fmt.Printf("[%d/%d] %s @%s (%s)\n", index+1, len(deps), dep.Name, ref, dep.Path)
-	}
+	audit.Dependencies(deps)
 
 	return nil
 }
