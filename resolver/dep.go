@@ -7,45 +7,46 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-type project struct {
+type constraint struct {
 	Name     string `toml:"name"`
 	Revision string `toml:"revision"`
 	Version  string `toml:"version"`
+	Branch   string `toml:"branch"`
 }
 
 type DepResolver struct {
 	VendorDir string `yaml:"vendor-dir"`
-	LockFile  string `yaml:"lock-file"`
+	Manifest  string `yaml:"manifest"`
 }
 
 func (r *DepResolver) Repos() ([]Dependency, error) {
-	projects, err := parseLockfile(r.LockFile)
+	constraints, err := parseManifest(r.Manifest)
 	if err != nil {
 		return nil, err
 	}
 
-	repos := make([]Dependency, len(projects))
+	repos := make([]Dependency, len(constraints))
 
-	for index, project := range projects {
+	for index, constraint := range constraints {
 		repos[index] = Dependency{
-			Name:      project.Name,
-			Version:   project.Version,
-			Reference: project.Revision,
-			Path:      filepath.Join(r.VendorDir, project.Name),
+			Name:      constraint.Name,
+			Version:   constraint.Version,
+			Reference: constraint.Revision,
+			Path:      filepath.Join(r.VendorDir, constraint.Name),
 		}
 	}
 
 	return repos, nil
 }
 
-func parseLockfile(filename string) ([]project, error) {
+func parseManifest(filename string) ([]constraint, error) {
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
 	type lock struct {
-		Projects []project `toml:"projects"`
+		Constraints []constraint `toml:"constraint"`
 	}
 
 	var l lock
@@ -53,5 +54,5 @@ func parseLockfile(filename string) ([]project, error) {
 		return nil, err
 	}
 
-	return l.Projects, nil
+	return l.Constraints, nil
 }
