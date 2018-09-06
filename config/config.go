@@ -12,13 +12,8 @@ type Config struct {
 }
 
 type ResolverConfig struct {
-	Dep  *resolver.DepResolver `yaml:"dep"`
-	Yarn *YarnResolver         `yaml:"yarn"`
-}
-
-type YarnResolver struct {
-	ModuleDir string `yaml:"module-dir"`
-	LockFile  string `yaml:"lock-file"`
+	Dep *resolver.DepResolver `yaml:"dep"`
+	Js  *resolver.JsResolver  `yaml:"js"`
 }
 
 func Load(filename string) (*Config, error) {
