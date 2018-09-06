@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/ossls/config"
+	"github.com/stackrox/ossls/resolver"
 )
 
 var (
@@ -32,9 +33,24 @@ func mainCmd() error {
 
 	fmt.Printf("Config: %+v\n", cfg)
 
-	deps, err := cfg.Resolvers.Dep.Repos()
+	goDeps, err := cfg.Resolvers.Dep.Repos()
 	if err != nil {
 		return err
+	}
+
+	jsDeps, err := cfg.Resolvers.Js.Repos()
+	if err != nil {
+		return err
+	}
+
+	deps := make([]resolver.Dependency, 0, len(goDeps)+len(jsDeps))
+
+	for _, dep := range goDeps {
+		deps = append(deps, dep)
+	}
+
+	for _, dep := range jsDeps {
+		deps = append(deps, dep)
 	}
 
 	for index, dep := range deps {
