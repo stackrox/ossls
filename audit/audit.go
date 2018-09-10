@@ -31,6 +31,21 @@ func findLicense(dirname string) []string {
 	return foundFiles
 }
 
+func extractLicense(filename string) ([]info, error) {
+	switch filepath.Base(filename) {
+	case "package.json":
+		return extractLicenseFromPackageJson(filename)
+	default:
+	}
+
+	return nil, nil
+}
+
+type info struct {
+	Type string `json:"type"`
+	URL  string `json:"url"`
+}
+
 func Dependencies(dependencies []resolver.Dependency) {
 	for index, dep := range dependencies {
 		fmt.Printf("[%d/%d] %s\n", index+1, len(dependencies), dep.Name)
@@ -44,6 +59,13 @@ func Dependencies(dependencies []resolver.Dependency) {
 
 		for _, file := range foundFiles {
 			fmt.Printf("  Found file %s\n", file)
+			licenses, err := extractLicense(file)
+			if err != nil {
+				panic(err)
+			}
+			for _, license := range licenses {
+				fmt.Printf("    License %s %s\n", license.Type, license.URL)
+			}
 		}
 	}
 }
