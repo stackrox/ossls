@@ -1,6 +1,12 @@
+ignored = ["github.com/joshdk/licensor/spdxgen"]
+
 [[constraint]]
   name = "gopkg.in/yaml.v2"
   version = "2.2.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/joshdk/licensor"
 
 [prune]
   go-tests = true
