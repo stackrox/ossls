@@ -3,6 +3,8 @@ package audit
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/joshdk/licensor/spdx"
 )
 
 // f1 represents the structure of a package.json file, where the license data
@@ -94,7 +96,7 @@ type format interface {
 	Licenses() []info
 }
 
-func extractLicenseFromPackageJson(filename string) ([]info, error) {
+func extractLicenseFromPackageJson(filename string) ([]spdx.License, error) {
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -105,10 +107,23 @@ func extractLicenseFromPackageJson(filename string) ([]info, error) {
 	formats := []format{&f1{}, &f2{}, &f3{}, &f4{}}
 	for _, format := range formats {
 		if err = json.Unmarshal(body, &format); err == nil {
-			return format.Licenses(), nil
+			return asSpdx(format.Licenses()), nil
 		}
 	}
 
 	// Return the last error from json.Unmarshal
 	return nil, err
+}
+
+func asSpdx(licenses []info) []spdx.License {
+	results := []spdx.License{}
+	for _, license := range licenses {
+		result := spdx.License{
+			Name:       license.Type,
+			Identifier: license.Type,
+			URIs:       []string{license.URL},
+		}
+		results = append(results, result)
+	}
+	return results
 }
