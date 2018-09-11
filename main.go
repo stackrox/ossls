@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/joshdk/licensor/spdx"
 	"github.com/stackrox/ossls/audit"
 	"github.com/stackrox/ossls/config"
 	"github.com/stackrox/ossls/resolver"
@@ -32,8 +33,6 @@ func mainCmd() error {
 		return err
 	}
 
-	fmt.Printf("Config: %+v\n", cfg)
-
 	goDeps, err := cfg.Resolvers.Dep.Repos()
 	if err != nil {
 		return err
@@ -54,9 +53,48 @@ func mainCmd() error {
 		deps = append(deps, dep)
 	}
 
-	audit.Dependencies(deps)
+	results, err := audit.Dependencies(deps)
+	if err != nil {
+		return err
+	}
+
+	report(*configFlag, results)
 
 	return nil
+}
+
+func report(header string, results map[resolver.Dependency]map[string][]spdx.License) {
+	tree := func(index int) (string, string) {
+		switch index {
+		case 0:
+			return "└── ", "    "
+		default:
+			return "├── ", "│   "
+		}
+	}
+
+	fmt.Println(header)
+
+	depIndex := len(results)
+	for dep, files := range results {
+		depIndex--
+		depPrefix, depCont := tree(depIndex)
+		fmt.Printf("%s%s\n", depPrefix, dep.Path)
+
+		fileIndex := len(files)
+		for file, licenses := range files {
+			fileIndex--
+			filePrefix, fileCont := tree(fileIndex)
+			fmt.Printf("%s%s%s\n", depCont, filePrefix, file)
+
+			licenseIndex := len(licenses)
+			for _, license := range licenses {
+				licenseIndex--
+				licensePrefix, _ := tree(licenseIndex)
+				fmt.Printf("%s%s%s%s\n", depCont, fileCont, licensePrefix, license.Name)
+			}
+		}
+	}
 }
 
 func main() {
