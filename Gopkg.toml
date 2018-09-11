@@ -5,8 +5,8 @@ ignored = ["github.com/joshdk/licensor/spdxgen"]
   version = "2.2.1"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/joshdk/licensor"
+  version = "0.1.0"
 
 [prune]
   go-tests = true
