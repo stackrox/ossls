@@ -3,8 +3,6 @@ package audit
 import (
 	"path/filepath"
 
-	"fmt"
-
 	"github.com/joshdk/licensor/spdx"
 	"github.com/stackrox/ossls/resolver"
 )
@@ -46,32 +44,33 @@ type info struct {
 	URL  string `json:"url"`
 }
 
-func Dependencies(dependencies []resolver.Dependency) {
-	for index, dep := range dependencies {
-		fmt.Printf("[%d/%d] %s\n", index+1, len(dependencies), dep.Name)
+func Dependencies(dependencies []resolver.Dependency) (map[resolver.Dependency]map[string][]spdx.License, error) {
+	results := make(map[resolver.Dependency]map[string][]spdx.License, len(dependencies))
 
+	for _, dep := range dependencies {
 		foundFiles := findLicense(dep.Path)
 
 		if len(foundFiles) == 0 {
-			fmt.Printf("  No license files found\n")
 			continue
 		}
 
+		result := make(map[string][]spdx.License, len(foundFiles))
+
 		for _, file := range foundFiles {
-			fmt.Printf("  Found file %s\n", file)
 			licenses, err := extractLicense(file)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			if len(licenses) == 0 {
-				fmt.Printf("    No licenses found\n")
 				continue
 			}
 
-			for _, license := range licenses {
-				fmt.Printf("    License %s %s\n", license.Identifier, license.URIs)
-			}
+			result[file] = licenses
 		}
+
+		results[dep] = result
 	}
+
+	return results, nil
 }
