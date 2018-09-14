@@ -7,15 +7,17 @@ import (
 	"github.com/stackrox/ossls/resolver"
 )
 
-func findLicense(dirname string) []string {
+func FindLicenseFiles(dirname string) []string {
 	var (
 		foundFiles = []string{}
 		patterns   = []string{
 			"package.json",
-			"LICENSE*",
-			"COPYING*",
-			"license*",
-			"copying*",
+			"*LICENSE*",
+			"*COPYING*",
+			"*AUTHOR*",
+			"*license*",
+			"*copying*",
+			"*author*",
 		}
 	)
 
@@ -48,7 +50,7 @@ func Dependencies(dependencies []resolver.Dependency) (map[resolver.Dependency]m
 	results := make(map[resolver.Dependency]map[string][]spdx.License, len(dependencies))
 
 	for _, dep := range dependencies {
-		foundFiles := findLicense(dep.Path)
+		foundFiles := FindLicenseFiles(dep.Path)
 
 		if len(foundFiles) == 0 {
 			continue
