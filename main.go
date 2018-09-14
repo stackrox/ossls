@@ -18,8 +18,9 @@ var (
 
 func mainCmd() error {
 	var (
-		checksumFlag = flag.Bool("checksum", false, "Calculate checksum for a file.")
 		configFlag   = flag.String("config", ".ossls.yml", "Path to configuration file.")
+		auditFlag    = flag.Bool("audit", false, "Audit all dependencies.")
+		checksumFlag = flag.Bool("checksum", false, "Calculate checksum for a file.")
 		listFlag     = flag.Bool("list", false, "List all dependencies.")
 		scanFlag     = flag.Bool("scan", false, "Scan single dependency.")
 		versionFlag  = flag.Bool("version", false, "Displays the version and exits.")
@@ -37,6 +38,20 @@ func mainCmd() error {
 	}
 
 	switch {
+	case *auditFlag:
+		violations, err := cmd.Audit(cfg)
+		if err != nil {
+			return err
+		}
+		cmd.AuditPrint(violations)
+
+		switch len(violations) {
+		case 0:
+			return nil
+		default:
+			return errors.New("violations found")
+		}
+
 	case *checksumFlag:
 		filename := flag.Arg(0)
 		checksum, err := cmd.Checksum(filename)
