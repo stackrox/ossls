@@ -18,9 +18,10 @@ var (
 
 func mainCmd() error {
 	var (
-		configFlag  = flag.String("config", ".ossls.yml", "Path to configuration file.")
-		listFlag    = flag.Bool("list", false, "List all dependencies")
-		versionFlag = flag.Bool("version", false, "Displays the version and exits.")
+		checksumFlag = flag.Bool("checksum", false, "Calculate checksum for a file.")
+		configFlag   = flag.String("config", ".ossls.yml", "Path to configuration file.")
+		listFlag     = flag.Bool("list", false, "List all dependencies.")
+		versionFlag  = flag.Bool("version", false, "Displays the version and exits.")
 	)
 	flag.Parse()
 
@@ -41,6 +42,15 @@ func mainCmd() error {
 			return err
 		}
 		cmd.ListPrint(names)
+		return nil
+
+	case *checksumFlag:
+		filename := flag.Arg(0)
+		checksum, err := cmd.Checksum(filename)
+		if err != nil {
+			return err
+		}
+		cmd.ChecksumPrint(filename, checksum)
 		return nil
 
 	default:
