@@ -55,12 +55,12 @@ func mainCmd() error {
 		return nil
 
 	case *scanFlag:
-		directory := flag.Arg(0)
-		dep, err := cmd.Scan(directory)
+		directories := flag.Args()
+		dependencies, err := cmd.Scan(directories)
 		if err != nil {
 			return err
 		}
-		cmd.ScanPrint(*configFlag, directory, dep)
+		cmd.ScanPrint(*configFlag, dependencies)
 		return nil
 
 	default:
