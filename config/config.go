@@ -8,7 +8,8 @@ import (
 )
 
 type Config struct {
-	Resolvers ResolverConfig `yaml:"resolvers"`
+	Resolvers    ResolverConfig        `yaml:"resolvers"`
+	Dependencies map[string]Dependency `yaml:"dependencies"`
 }
 
 type ResolverConfig struct {
