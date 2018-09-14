@@ -21,6 +21,7 @@ func mainCmd() error {
 		checksumFlag = flag.Bool("checksum", false, "Calculate checksum for a file.")
 		configFlag   = flag.String("config", ".ossls.yml", "Path to configuration file.")
 		listFlag     = flag.Bool("list", false, "List all dependencies.")
+		scanFlag     = flag.Bool("scan", false, "Scan single dependency.")
 		versionFlag  = flag.Bool("version", false, "Displays the version and exits.")
 	)
 	flag.Parse()
@@ -36,6 +37,15 @@ func mainCmd() error {
 	}
 
 	switch {
+	case *checksumFlag:
+		filename := flag.Arg(0)
+		checksum, err := cmd.Checksum(filename)
+		if err != nil {
+			return err
+		}
+		cmd.ChecksumPrint(filename, checksum)
+		return nil
+
 	case *listFlag:
 		names, err := cmd.List(cfg)
 		if err != nil {
@@ -44,13 +54,13 @@ func mainCmd() error {
 		cmd.ListPrint(names)
 		return nil
 
-	case *checksumFlag:
-		filename := flag.Arg(0)
-		checksum, err := cmd.Checksum(filename)
+	case *scanFlag:
+		directory := flag.Arg(0)
+		dep, err := cmd.Scan(directory)
 		if err != nil {
 			return err
 		}
-		cmd.ChecksumPrint(filename, checksum)
+		cmd.ScanPrint(*configFlag, directory, dep)
 		return nil
 
 	default:
