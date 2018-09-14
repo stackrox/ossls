@@ -3,6 +3,8 @@ package audit
 import (
 	"path/filepath"
 
+	"os"
+
 	"github.com/joshdk/licensor/spdx"
 	"github.com/stackrox/ossls/resolver"
 )
@@ -11,13 +13,15 @@ func FindLicenseFiles(dirname string) []string {
 	var (
 		foundFiles = []string{}
 		patterns   = []string{
-			"package.json",
-			"*LICENSE*",
-			"*COPYING*",
 			"*AUTHOR*",
-			"*license*",
-			"*copying*",
+			"*COPYING*",
+			"*LICENSE*",
+			"*NOTICE*",
 			"*author*",
+			"*copying*",
+			"*license*",
+			"*notice*",
+			"package.json",
 		}
 	)
 
@@ -25,6 +29,10 @@ func FindLicenseFiles(dirname string) []string {
 		glob := filepath.Join(dirname, pattern)
 		matches, _ := filepath.Glob(glob)
 		for _, match := range matches {
+			info, err := os.Stat(match)
+			if err != nil || info.IsDir() {
+				continue
+			}
 			foundFiles = append(foundFiles, match)
 		}
 	}
