@@ -25,18 +25,18 @@ func NewViolation(dependency string, message string) Violation {
 	}
 }
 
-func DiffViolations(expected map[string]config.Dependency, actual map[string]struct{}) []Violation {
-	violations := []Violation{}
+func DiffViolations(expected map[string]config.Dependency, actual map[string]struct{}) map[string][]Violation {
+	violations := make(map[string][]Violation)
 
 	for name := range actual {
 		if _, found := expected[name]; !found {
-			violations = append(violations, NewViolation(name, "dependency added"))
+			violations[name] = []Violation{NewViolation(name, "dependency added")}
 		}
 	}
 
 	for name := range expected {
 		if _, found := actual[name]; !found {
-			violations = append(violations, NewViolation(name, "dependency deleted"))
+			violations[name] = []Violation{NewViolation(name, "dependency deleted")}
 		}
 	}
 
@@ -44,7 +44,7 @@ func DiffViolations(expected map[string]config.Dependency, actual map[string]str
 }
 
 func DependencyViolations(name string, dependency config.Dependency) ([]Violation, error) {
-	violations := []Violation{}
+	violations := make([]Violation, 0)
 
 	if !strings.HasPrefix(dependency.URL, "http://") && !strings.HasPrefix(dependency.URL, "https://") {
 		violations = append(violations, NewViolation(name, "invalid url "+dependency.URL))
@@ -82,23 +82,22 @@ func DependencyViolations(name string, dependency config.Dependency) ([]Violatio
 	return violations, nil
 }
 
-func Audit(cfg *config.Config) ([]Violation, error) {
-
+func Audit(cfg *config.Config) (map[string][]Violation, int, error) {
 	var nothing = struct{}{}
 
 	// Get list of Golang (via dep) dependencies
 	goDeps, err := cfg.Resolvers.Dep.Repos()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Get list of JavaScript (via package.json) dependencies
 	jsDeps, err := cfg.Resolvers.Js.Repos()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	// Alias know dependencies map for ease of use
+	// Alias known dependencies map for ease of use
 	expectedDeps := cfg.Dependencies
 	actualDeps := make(map[string]struct{}, len(goDeps)+len(jsDeps))
 
@@ -119,34 +118,42 @@ func Audit(cfg *config.Config) ([]Violation, error) {
 
 		vs, err := DependencyViolations(name, dependency)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-		violations = append(violations, vs...)
+
+		violations[name] = vs
 	}
 
-	return violations, nil
+	total := 0
+	for _, issues := range violations {
+		total += len(issues)
+	}
+
+	return violations, total, nil
 }
 
-func AuditPrint(violations []Violation) {
-	deps := make(map[string][]Violation)
-	for _, violation := range violations {
-		deps[violation.Dependency] = append(deps[violation.Dependency], violation)
-	}
+func AuditPrint(violations map[string][]Violation) {
+	var (
+		total = 0
+		names = make([]string, 0, len(violations))
+	)
 
-	names := make([]string, 0, len(deps))
-	for name := range deps {
+	for name := range violations {
 		names = append(names, name)
 	}
 
 	sort.Strings(names)
 
-	for index, name := range names {
-		if index != 0 {
-			fmt.Println()
+	for _, name := range names {
+		total += len(violations[name])
+		switch len(violations[name]) {
+		case 0:
+			fmt.Printf("✓ %s\n", name)
+		default:
+			fmt.Printf("✗ %s\n", name)
 		}
-		fmt.Printf("%s:\n", name)
-		for _, issue := range deps[name] {
-			fmt.Printf("  - %s\n", issue.Message)
+		for _, issue := range violations[name] {
+			fmt.Printf("  ↳ %s\n", issue.Message)
 		}
 	}
 }

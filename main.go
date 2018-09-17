@@ -27,7 +27,7 @@ func mainCmd() error {
 	)
 	flag.Parse()
 
-	if *versionFlag == true {
+	if *versionFlag {
 		fmt.Println(version)
 		return nil
 	}
@@ -39,13 +39,13 @@ func mainCmd() error {
 
 	switch {
 	case *auditFlag:
-		violations, err := cmd.Audit(cfg)
+		violations, count, err := cmd.Audit(cfg)
 		if err != nil {
 			return err
 		}
 		cmd.AuditPrint(violations)
 
-		switch len(violations) {
+		switch count {
 		case 0:
 			return nil
 		default:
