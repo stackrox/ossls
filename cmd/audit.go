@@ -9,6 +9,7 @@ import (
 
 	"sort"
 
+	"github.com/fatih/color"
 	"github.com/stackrox/ossls/config"
 	"github.com/stackrox/ossls/integrity"
 )
@@ -148,12 +149,12 @@ func AuditPrint(violations map[string][]Violation) {
 		total += len(violations[name])
 		switch len(violations[name]) {
 		case 0:
-			fmt.Printf("✓ %s\n", name)
+			color.Green("✓ %s\n", name)
 		default:
-			fmt.Printf("✗ %s\n", name)
+			color.Red("✗ %s\n", name)
 		}
 		for _, issue := range violations[name] {
-			fmt.Printf("  ↳ %s\n", issue.Message)
+			color.HiBlack("  ↳ %s\n", issue.Message)
 		}
 	}
 }

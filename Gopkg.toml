@@ -5,6 +5,10 @@ ignored = ["github.com/joshdk/licensor/spdxgen"]
   version = "2.2.1"
 
 [[constraint]]
+  name = "github.com/fatih/color"
+  version = "1.7.0"
+
+[[constraint]]
   name = "github.com/joshdk/licensor"
   version = "0.1.0"
 
