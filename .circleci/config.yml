@@ -3,7 +3,7 @@ version: 2
 jobs:
   test:
     docker:
-    - image: circleci/golang:1.10.3
+    - image: circleci/golang:1.10.4
     working_directory: /go/src/github.com/stackrox/ossls
     steps:
     - checkout
@@ -21,7 +21,7 @@ jobs:
 
   build:
     docker:
-    - image: circleci/golang:1.10.3
+    - image: circleci/golang:1.10.4
     working_directory: /go/src/github.com/stackrox/ossls
     steps:
     - checkout
@@ -30,8 +30,8 @@ jobs:
         working_directory: /tmp
         command: |
           sudo env GOOS=darwin GOARCH=amd64 $(which go) install std
-          wget https://github.com/upx/upx/releases/download/v3.94/upx-3.94-amd64_linux.tar.xz
-          tar --strip=1 -xf upx-3.94-amd64_linux.tar.xz
+          wget --quiet https://github.com/upx/upx/releases/download/v3.95/upx-3.95-amd64_linux.tar.xz
+          tar --strip=1 -xf upx-3.95-amd64_linux.tar.xz
           sudo install upx /usr/bin
     - run:
         name: Build binaries
@@ -60,7 +60,7 @@ jobs:
 
   release:
     docker:
-    - image: cibuilds/github:0.10.0
+    - image: cibuilds/github:0.12.0
     working_directory: /go/src/github.com/stackrox/ossls
     steps:
     - attach_workspace:
