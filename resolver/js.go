@@ -11,21 +11,17 @@ type JsResolver struct {
 	Manifest  string `yaml:"manifest"`
 }
 
-func (r *JsResolver) Repos() ([]Dependency, error) {
+func (r *JsResolver) Repos() ([]string, error) {
 	deps, err := parsePackageJson(r.Manifest)
 	if err != nil {
 		return nil, err
 	}
 
-	repos := make([]Dependency, 0, len(deps))
+	repos := make([]string, 0, len(deps))
 
-	for name, version := range deps {
-		dep := Dependency{
-			Name:    name,
-			Version: version,
-			Path:    filepath.Join(r.ModuleDir, name),
-		}
-		repos = append(repos, dep)
+	for name := range deps {
+		repo := filepath.Join(r.ModuleDir, name)
+		repos = append(repos, repo)
 	}
 
 	return repos, nil

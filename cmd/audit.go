@@ -87,27 +87,27 @@ func Audit(cfg *config.Config) (map[string][]Violation, int, error) {
 	var nothing = struct{}{}
 
 	// Get list of Golang (via dep) dependencies
-	goDeps, err := cfg.Resolvers.Dep.Repos()
+	goRepos, err := cfg.Resolvers.Dep.Repos()
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Get list of JavaScript (via package.json) dependencies
-	jsDeps, err := cfg.Resolvers.Js.Repos()
+	jsRepos, err := cfg.Resolvers.Js.Repos()
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Alias known dependencies map for ease of use
 	expectedDeps := cfg.Dependencies
-	actualDeps := make(map[string]struct{}, len(goDeps)+len(jsDeps))
+	actualDeps := make(map[string]struct{}, len(goRepos)+len(jsRepos))
 
 	// Add dependency directory paths from both list together
-	for _, dep := range goDeps {
-		actualDeps[dep.Path] = nothing
+	for _, repo := range goRepos {
+		actualDeps[repo] = nothing
 	}
-	for _, dep := range jsDeps {
-		actualDeps[dep.Path] = nothing
+	for _, repo := range jsRepos {
+		actualDeps[repo] = nothing
 	}
 
 	violations := DiffViolations(expectedDeps, actualDeps)

@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/joshdk/licensor/spdx"
-	"github.com/stackrox/ossls/resolver"
 )
 
 func FindLicenseFiles(dirname string) []string {
@@ -54,11 +53,11 @@ type info struct {
 	URL  string `json:"url"`
 }
 
-func Dependencies(dependencies []resolver.Dependency) (map[resolver.Dependency]map[string][]spdx.License, error) {
-	results := make(map[resolver.Dependency]map[string][]spdx.License, len(dependencies))
+func Dependencies(dependencies []string) (map[string]map[string][]spdx.License, error) {
+	results := make(map[string]map[string][]spdx.License, len(dependencies))
 
 	for _, dep := range dependencies {
-		foundFiles := FindLicenseFiles(dep.Path)
+		foundFiles := FindLicenseFiles(dep)
 
 		if len(foundFiles) == 0 {
 			continue

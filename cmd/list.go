@@ -9,24 +9,24 @@ import (
 
 func List(cfg *config.Config) ([]string, error) {
 	// Get list of Golang (via dep) dependencies
-	goDeps, err := cfg.Resolvers.Dep.Repos()
+	goRepos, err := cfg.Resolvers.Dep.Repos()
 	if err != nil {
 		return nil, err
 	}
 
 	// Get list of JavaScript (via package.json) dependencies
-	jsDeps, err := cfg.Resolvers.Js.Repos()
+	jsRepos, err := cfg.Resolvers.Js.Repos()
 	if err != nil {
 		return nil, err
 	}
 
 	// Add dependency directory paths from both list together
 	directories := []string{}
-	for _, dep := range goDeps {
-		directories = append(directories, dep.Path)
+	for _, repo := range goRepos {
+		directories = append(directories, repo)
 	}
-	for _, dep := range jsDeps {
-		directories = append(directories, dep.Path)
+	for _, repo := range jsRepos {
+		directories = append(directories, repo)
 	}
 
 	return directories, nil
