@@ -19,21 +19,16 @@ type DepResolver struct {
 	Manifest  string `yaml:"manifest"`
 }
 
-func (r *DepResolver) Repos() ([]Dependency, error) {
+func (r *DepResolver) Repos() ([]string, error) {
 	constraints, err := parseManifest(r.Manifest)
 	if err != nil {
 		return nil, err
 	}
 
-	repos := make([]Dependency, len(constraints))
+	repos := make([]string, len(constraints))
 
 	for index, constraint := range constraints {
-		repos[index] = Dependency{
-			Name:      constraint.Name,
-			Version:   constraint.Version,
-			Reference: constraint.Revision,
-			Path:      filepath.Join(r.VendorDir, constraint.Name),
-		}
+		repos[index] = filepath.Join(r.VendorDir, constraint.Name)
 	}
 
 	return repos, nil
