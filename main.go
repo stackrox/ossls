@@ -1,12 +1,10 @@
 package main
 
 import (
-	"os"
-
+	"errors"
 	"flag"
 	"fmt"
-
-	"errors"
+	"os"
 
 	"github.com/stackrox/ossls/cmd"
 	"github.com/stackrox/ossls/config"

@@ -19,7 +19,6 @@ func Checksum(filename string) (string, error) {
 func ChecksumField(data interface{}) (string, error) {
 	serialized, err := json.MarshalIndent(data, "", "  ")
 	serialized = append(serialized, '\n')
-	fmt.Printf("Serialized: [[[%s]]]\n", string(serialized))
 	if err != nil {
 		return "", err
 	}
