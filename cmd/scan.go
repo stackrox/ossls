@@ -1,10 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-
 	"io/ioutil"
-
 	"path/filepath"
 
 	"github.com/joshdk/licensor"
@@ -36,23 +35,54 @@ func ScanSingle(directory string) (*config.Dependency, error) {
 		bestConfidence = 0.8
 		bestLicense    *spdx.License
 		dependency     = &config.Dependency{
-			Files: make(map[string]string),
+			Files: make(map[string]config.ContentConfig),
 		}
 	)
 
 	// Calculate checksums for the found files
 	for _, file := range licenseFiles {
-		checksum, err := integrity.Checksum(file)
-		if err != nil {
-			return nil, err
-		}
-
 		frag, err := filepath.Rel(directory, file)
 		if err != nil {
 			return nil, err
 		}
 
-		dependency.Files[frag] = checksum
+		content := config.ContentConfig{}
+
+		body, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+
+		switch filepath.Base(file) {
+		case "package.json":
+			content.FieldHashes = make(map[string]string)
+
+			fields := make(map[string]interface{})
+
+			if err := json.Unmarshal(body, &fields); err != nil {
+				return nil, err
+			}
+
+			for _, key := range []string{"author", "authors", "license", "licenses", "contributors"} {
+				data, found := fields[key]
+				if !found {
+					continue
+				}
+
+				checksum, err := integrity.ChecksumField(data)
+				if err != nil {
+					return nil, err
+				}
+
+				content.FieldHashes[key] = checksum
+			}
+
+		default:
+			checksum := integrity.ChecksumBytes(body)
+			content.FileHash = checksum
+		}
+
+		dependency.Files[frag] = content
 	}
 
 	// Attempt to divine the best license from the set of found files

@@ -17,11 +17,52 @@ type ResolverConfig struct {
 	Js  *resolver.JsResolver  `yaml:"js"`
 }
 
+type ContentConfig struct {
+	FileHash    string
+	FieldHashes map[string]string
+}
+
+func (e *ContentConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var (
+		fieldHashes = make(map[string]string)
+		fileHash    string
+	)
+
+	*e = ContentConfig{}
+
+	if err := unmarshal(&fieldHashes); err == nil {
+		e.FieldHashes = fieldHashes
+		return nil
+	}
+
+	if err := unmarshal(&fileHash); err != nil {
+		return err
+	}
+
+	e.FileHash = fileHash
+	return nil
+}
+
+func (e ContentConfig) MarshalYAML() (interface{}, error) {
+	switch {
+	case len(e.FileHash) == 0 && len(e.FieldHashes) == 0:
+		panic("both empty")
+	case len(e.FileHash) != 0 && len(e.FieldHashes) != 0:
+		panic("both non-empty")
+	case len(e.FileHash) != 0:
+		return e.FileHash, nil
+	case len(e.FieldHashes) != 0:
+		return e.FieldHashes, nil
+	default:
+		panic("impossible")
+	}
+}
+
 type Dependency struct {
-	URL         string            `yaml:"url"`
-	License     string            `yaml:"license"`
-	Files       map[string]string `yaml:"files"`
-	Attribution []string          `yaml:"attribution"`
+	URL         string                   `yaml:"url"`
+	License     string                   `yaml:"license"`
+	Files       map[string]ContentConfig `yaml:"files"`
+	Attribution []string                 `yaml:"attribution"`
 }
 
 func Load(filename string) (*Config, error) {

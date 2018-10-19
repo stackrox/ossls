@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
-
 	"sort"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/stackrox/ossls/config"
@@ -63,20 +63,65 @@ func DependencyViolations(name string, dependency config.Dependency) ([]Violatio
 		violations = append(violations, NewViolation(name, "no files"))
 	}
 
-	for file, checksum := range dependency.Files {
+	for file, content := range dependency.Files {
 		filename := filepath.Join(name, file)
-		if _, err := os.Stat(filename); err != nil {
-			violations = append(violations, NewViolation(name, fmt.Sprintf("file %s does not exist.", filename)))
-			continue
-		}
 
-		matched, actual, err := integrity.Verify(filename, checksum)
+		fvs, err := FileViolations(name, filename, content)
 		if err != nil {
 			return nil, err
 		}
 
+		violations = append(violations, fvs...)
+	}
+
+	return violations, nil
+}
+
+func FileViolations(dependency string, filename string, content config.ContentConfig) ([]Violation, error) {
+	violations := make([]Violation, 0)
+
+	if _, err := os.Stat(filename); err != nil {
+		violations = append(violations, NewViolation(dependency, fmt.Sprintf("file %s does not exist.", filename)))
+		return violations, nil
+	}
+
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(content.FileHash) != 0 {
+		matched, actual := integrity.VerifyBytes(body, content.FileHash)
 		if !matched {
-			violations = append(violations, NewViolation(name, fmt.Sprintf("checksum mismatch for %s. expected %s but got %s", filename, checksum, actual)))
+			violations = append(violations, NewViolation(dependency, fmt.Sprintf("checksum mismatch for %s. expected %s but got %s", filename, content.FileHash, actual)))
+		}
+		return violations, nil
+	}
+
+	fields := make(map[string]interface{})
+
+	if err := json.Unmarshal(body, &fields); err != nil {
+		violations = append(violations, NewViolation(dependency, fmt.Sprintf("unable to unmarshal %s. invalid json", filename)))
+		return violations, nil
+	}
+
+	for key, expected := range content.FieldHashes {
+		value, found := fields[key]
+
+		if !found {
+			violations = append(violations, NewViolation(dependency, fmt.Sprintf("missing field %s in %s.", key, filename)))
+			continue
+		}
+
+		matched, actual, err := integrity.VerifyField(value, expected)
+		if err != nil {
+			violations = append(violations, NewViolation(dependency, fmt.Sprintf("unable to checksum field %s in %s.", key, filename)))
+			continue
+		}
+
+		if !matched {
+			violations = append(violations, NewViolation(dependency, fmt.Sprintf("checksum mismatch for %s field %s. expected %s but got %s", filename, key, expected, actual)))
+			continue
 		}
 	}
 
