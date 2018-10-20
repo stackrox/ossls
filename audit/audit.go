@@ -1,9 +1,8 @@
 package audit
 
 import (
-	"path/filepath"
-
 	"os"
+	"path/filepath"
 
 	"github.com/joshdk/licensor/spdx"
 )
