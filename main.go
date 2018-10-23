@@ -31,13 +31,13 @@ func mainCmd() error {
 		return nil
 	}
 
-	cfg, err := config.Load(*configFlag)
-	if err != nil {
-		return err
-	}
-
 	switch {
 	case *auditFlag:
+		cfg, err := config.Load(*configFlag)
+		if err != nil {
+			return err
+		}
+
 		violations, count, err := cmd.Audit(cfg)
 		if err != nil {
 			return err
@@ -71,6 +71,11 @@ func mainCmd() error {
 		return nil
 
 	case *listFlag:
+		cfg, err := config.Load(*configFlag)
+		if err != nil {
+			return err
+		}
+
 		names, err := cmd.List(cfg)
 		if err != nil {
 			return err
