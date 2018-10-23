@@ -3,6 +3,7 @@ package integrity
 import (
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 )
@@ -18,12 +19,31 @@ func Checksum(filename string) (string, error) {
 
 func ChecksumField(data interface{}) (string, error) {
 	serialized, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return "", err
+	}
 	serialized = append(serialized, '\n')
+
+	return ChecksumBytes(serialized), nil
+}
+
+func ChecksumFileField(filename string, field string) (string, error) {
+	fields := make(map[string]interface{})
+	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
 
-	return ChecksumBytes(serialized), nil
+	if err := json.Unmarshal(body, &fields); err != nil {
+		return "", err
+	}
+
+	data, found := fields[field]
+	if !found {
+		return "", errors.New("field does not exist")
+	}
+
+	return ChecksumField(data)
 }
 
 func ChecksumBytes(data []byte) string {
