@@ -43,8 +43,9 @@ dependencies:
     url: https://github.com/facebook/react
     license: MIT
     files:
-      LICENSE:      f657f99d3fb9647db92628e96007aabb46e5f04f33e49999075aab8e250ca7ce
-      package.json: b4884eca6b644b76bbe210e276f3455b8e0c6fe7d1d86c79b8bc1b7e61cfc3d6
+      LICENSE: 52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85
+      package.json:
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
     - Copyright (c) Facebook, Inc. and its affiliates.
 

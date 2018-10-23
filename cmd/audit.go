@@ -180,8 +180,9 @@ func Audit(cfg *config.Config) (map[string][]Violation, int, error) {
 
 func AuditPrint(violations map[string][]Violation) {
 	var (
-		total = 0
-		names = make([]string, 0, len(violations))
+		total  = 0
+		names  = make([]string, 0, len(violations))
+		failed bool
 	)
 
 	for name := range violations {
@@ -196,10 +197,15 @@ func AuditPrint(violations map[string][]Violation) {
 		case 0:
 			color.Green("✓ %s\n", name)
 		default:
+			failed = true
 			color.Red("✗ %s\n", name)
 		}
 		for _, issue := range violations[name] {
 			color.HiBlack("  ↳ %s\n", issue.Message)
 		}
+	}
+
+	if failed {
+		color.Blue("› See %s for information on correcting audit failures.\n", "https://github.com/stackrox/ossls#auditing-failures")
 	}
 }
