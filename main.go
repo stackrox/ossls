@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/ossls/cmd"
 	"github.com/stackrox/ossls/config"
+	"github.com/stackrox/ossls/integrity"
 )
 
 var (
@@ -51,12 +52,22 @@ func mainCmd() error {
 		}
 
 	case *checksumFlag:
-		filename := flag.Arg(0)
-		checksum, err := cmd.Checksum(filename)
+		var (
+			filename = flag.Arg(0)
+			field    = flag.Arg(1)
+			checksum string
+			err      error
+		)
+		switch field {
+		case "":
+			checksum, err = integrity.Checksum(filename)
+		default:
+			checksum, err = integrity.ChecksumFileField(filename, field)
+		}
 		if err != nil {
 			return err
 		}
-		cmd.ChecksumPrint(filename, checksum)
+		cmd.ChecksumPrint(filename, field, checksum)
 		return nil
 
 	case *listFlag:
