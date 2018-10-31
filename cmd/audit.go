@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/joshdk/licensor/spdx"
 	"github.com/stackrox/ossls/config"
 	"github.com/stackrox/ossls/integrity"
 )
@@ -44,7 +45,7 @@ func DiffViolations(expected map[string]config.Dependency, actual map[string]str
 	return violations
 }
 
-func DependencyViolations(name string, dependency config.Dependency) ([]Violation, error) {
+func DependencyViolations(name string, dependency config.Dependency, licenseMap map[string]spdx.License) ([]Violation, error) {
 	violations := make([]Violation, 0)
 
 	if !strings.HasPrefix(dependency.URL, "http://") && !strings.HasPrefix(dependency.URL, "https://") {
@@ -61,6 +62,11 @@ func DependencyViolations(name string, dependency config.Dependency) ([]Violatio
 
 	if len(dependency.Files) < 1 {
 		violations = append(violations, NewViolation(name, "no files"))
+	}
+
+	_, found := licenseMap[dependency.License]
+	if !found {
+		violations = append(violations, NewViolation(name, "unknown licence type '"+dependency.License+"'"))
 	}
 
 	for file, content := range dependency.Files {
@@ -155,14 +161,21 @@ func Audit(cfg *config.Config) (map[string][]Violation, int, error) {
 		actualDeps[repo] = nothing
 	}
 
-	violations := DiffViolations(expectedDeps, actualDeps)
+	var (
+		violations = DiffViolations(expectedDeps, actualDeps)
+		licenseMap = make(map[string]spdx.License)
+	)
+
+	for _, license := range spdx.All() {
+		licenseMap[license.Identifier] = license
+	}
 
 	for name, dependency := range expectedDeps {
 		if _, found := actualDeps[name]; !found {
 			continue
 		}
 
-		vs, err := DependencyViolations(name, dependency)
+		vs, err := DependencyViolations(name, dependency, licenseMap)
 		if err != nil {
 			return nil, 0, err
 		}
