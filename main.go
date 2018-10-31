@@ -21,6 +21,7 @@ func mainCmd() error {
 		auditFlag    = flag.Bool("audit", false, "Audit all dependencies.")
 		checksumFlag = flag.Bool("checksum", false, "Calculate checksum for a file.")
 		listFlag     = flag.Bool("list", false, "List all dependencies.")
+		noticeFlag   = flag.Bool("notice", false, "Generate license notice.")
 		scanFlag     = flag.Bool("scan", false, "Scan single dependency.")
 		versionFlag  = flag.Bool("version", false, "Displays the version and exits.")
 	)
@@ -81,6 +82,18 @@ func mainCmd() error {
 			return err
 		}
 		cmd.ListPrint(names)
+		return nil
+
+	case *noticeFlag:
+		cfg, err := config.Load(*configFlag)
+		if err != nil {
+			return err
+		}
+
+		err = cmd.PrintNotice(cfg)
+		if err != nil {
+			return err
+		}
 		return nil
 
 	case *scanFlag:
