@@ -24,6 +24,7 @@ func mainCmd() error {
 		noticeFlag   = flag.Bool("notice", false, "Generate license notice.")
 		scanFlag     = flag.Bool("scan", false, "Scan single dependency.")
 		versionFlag  = flag.Bool("version", false, "Displays the version and exits.")
+		quietFlag    = flag.Bool("quiet", false, "Only print audit entries that fail.")
 	)
 	flag.Parse()
 
@@ -43,7 +44,7 @@ func mainCmd() error {
 		if err != nil {
 			return err
 		}
-		cmd.AuditPrint(violations)
+		cmd.AuditPrint(violations, *quietFlag)
 
 		switch count {
 		case 0:

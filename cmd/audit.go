@@ -191,7 +191,7 @@ func Audit(cfg *config.Config) (map[string][]Violation, int, error) {
 	return violations, total, nil
 }
 
-func AuditPrint(violations map[string][]Violation) {
+func AuditPrint(violations map[string][]Violation, quiet bool) {
 	var (
 		total  = 0
 		names  = make([]string, 0, len(violations))
@@ -208,7 +208,9 @@ func AuditPrint(violations map[string][]Violation) {
 		total += len(violations[name])
 		switch len(violations[name]) {
 		case 0:
-			color.Green("✓ %s\n", name)
+			if !quiet {
+				color.Green("✓ %s\n", name)
+			}
 		default:
 			failed = true
 			color.Red("✗ %s\n", name)
