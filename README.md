@@ -114,7 +114,7 @@ $ ossls -audit
 ossls: violations found
 ```
 
-##### Dependency Added
+##### Dependency Deleted
 
 Indicates that a dependency was removed from a package manager manifest (like `Gopkg.toml` or `package.json`) but still exists in the ossls dependency list.
 
