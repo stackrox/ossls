@@ -65,7 +65,7 @@ func DependencyViolations(name string, dependency config.Dependency, licenseMap 
 	}
 
 	_, found := licenseMap[dependency.License]
-	if !found {
+	if !found || !strings.HasPrefix(dependency.License, "Custom: ") {
 		violations = append(violations, NewViolation(name, "unknown licence type '"+dependency.License+"'"))
 	}
 
