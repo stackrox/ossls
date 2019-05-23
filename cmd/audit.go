@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,9 +12,42 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/joshdk/licensor/spdx"
+	"github.com/spf13/cobra"
 	"github.com/stackrox/ossls/config"
 	"github.com/stackrox/ossls/integrity"
 )
+
+func AuditCommand() *cobra.Command {
+	c := &cobra.Command{
+		Use:   "audit",
+		Short: "Audit all dependencies",
+		RunE: func(c *cobra.Command, _ []string) error {
+			quietFlag, _ := c.Flags().GetBool("quiet")
+			configFlag, _ := c.Flags().GetString("config")
+			cfg, err := config.Load(configFlag)
+			if err != nil {
+				return err
+			}
+
+			violations, count, err := Audit(cfg)
+			if err != nil {
+				return err
+			}
+
+			AuditPrint(violations, quietFlag)
+
+			switch count {
+			case 0:
+				return nil
+			default:
+				return errors.New("violations found")
+			}
+		},
+	}
+	c.Flags().BoolP("quiet", "q", false, "only display audit entries that fail")
+
+	return c
+}
 
 type Violation struct {
 	Dependency string

@@ -4,8 +4,31 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/spf13/cobra"
 	"github.com/stackrox/ossls/config"
 )
+
+func ListCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List all dependencies",
+		RunE: func(c *cobra.Command, _ []string) error {
+			configFlag, _ := c.Flags().GetString("config")
+			cfg, err := config.Load(configFlag)
+			if err != nil {
+				return err
+			}
+
+			names, err := List(cfg)
+			if err != nil {
+				return err
+			}
+
+			ListPrint(names)
+			return nil
+		},
+	}
+}
 
 func List(cfg *config.Config) ([]string, error) {
 	// Get list of Golang (via dep) dependencies

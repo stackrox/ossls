@@ -2,15 +2,30 @@ package cmd
 
 import (
 	"fmt"
-
 	"sort"
 
 	"github.com/joshdk/licensor/spdx"
+	"github.com/spf13/cobra"
 	"github.com/stackrox/ossls/config"
 )
 
-func PrintNotice(cfg *config.Config) error {
+func NoticeCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "notice",
+		Short: "Generate license notice",
+		RunE: func(c *cobra.Command, _ []string) error {
+			configFlag, _ := c.Flags().GetString("config")
+			cfg, err := config.Load(configFlag)
+			if err != nil {
+				return err
+			}
 
+			return PrintNotice(cfg)
+		},
+	}
+}
+
+func PrintNotice(cfg *config.Config) error {
 	// Create a map of SPDX license identifiers (like "MIT") to a list of all
 	// dependencies that use that license.
 	byType := make(map[string][]config.Dependency)
