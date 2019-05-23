@@ -16,7 +16,7 @@ import (
 )
 
 func ScanCommand() *cobra.Command {
-	c := &cobra.Command{
+	return &cobra.Command{
 		Use:   "scan",
 		Short: "Scan a single dependency",
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -29,8 +29,6 @@ func ScanCommand() *cobra.Command {
 			return nil
 		},
 	}
-
-	return c
 }
 
 func Scan(directories []string) (map[string]config.Dependency, error) {

@@ -9,10 +9,10 @@ import (
 )
 
 func ListCommand() *cobra.Command {
-	c := &cobra.Command{
+	return &cobra.Command{
 		Use:   "list",
 		Short: "List all dependencies",
-		RunE: func(c *cobra.Command, args []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			configFlag, _ := c.Flags().GetString("config")
 			cfg, err := config.Load(configFlag)
 			if err != nil {
@@ -28,8 +28,6 @@ func ListCommand() *cobra.Command {
 			return nil
 		},
 	}
-
-	return c
 }
 
 func List(cfg *config.Config) ([]string, error) {

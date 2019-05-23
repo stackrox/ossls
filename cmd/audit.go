@@ -21,7 +21,7 @@ func AuditCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "audit",
 		Short: "Audit all dependencies",
-		RunE: func(c *cobra.Command, args []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			quietFlag, _ := c.Flags().GetBool("quiet")
 			configFlag, _ := c.Flags().GetString("config")
 			cfg, err := config.Load(configFlag)

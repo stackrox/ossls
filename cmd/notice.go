@@ -10,10 +10,10 @@ import (
 )
 
 func NoticeCommand() *cobra.Command {
-	c := &cobra.Command{
+	return &cobra.Command{
 		Use:   "notice",
 		Short: "Generate license notice",
-		RunE: func(c *cobra.Command, args []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			configFlag, _ := c.Flags().GetString("config")
 			cfg, err := config.Load(configFlag)
 			if err != nil {
@@ -23,8 +23,6 @@ func NoticeCommand() *cobra.Command {
 			return PrintNotice(cfg)
 		},
 	}
-
-	return c
 }
 
 func PrintNotice(cfg *config.Config) error {
