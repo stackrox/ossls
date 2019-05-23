@@ -8,11 +8,30 @@ import (
 
 	"github.com/joshdk/licensor"
 	"github.com/joshdk/licensor/spdx"
+	"github.com/spf13/cobra"
 	"github.com/stackrox/ossls/audit"
 	"github.com/stackrox/ossls/config"
 	"github.com/stackrox/ossls/integrity"
 	"gopkg.in/yaml.v2"
 )
+
+func ScanCommand() *cobra.Command {
+	c := &cobra.Command{
+		Use:   "scan",
+		Short: "Scan a single dependency",
+		RunE: func(_ *cobra.Command, args []string) error {
+			dependencies, err := Scan(args)
+			if err != nil {
+				return err
+			}
+
+			ScanPrint(dependencies)
+			return nil
+		},
+	}
+
+	return c
+}
 
 func Scan(directories []string) (map[string]config.Dependency, error) {
 	dependencies := make(map[string]config.Dependency, len(directories))
@@ -107,7 +126,7 @@ func ScanSingle(directory string) (*config.Dependency, error) {
 	return dependency, nil
 }
 
-func ScanPrint(configFile string, dependencies map[string]config.Dependency) {
+func ScanPrint(dependencies map[string]config.Dependency) {
 	dummy := map[string]map[string]config.Dependency{
 		"dependencies": dependencies,
 	}
@@ -118,7 +137,7 @@ func ScanPrint(configFile string, dependencies map[string]config.Dependency) {
 	fmt.Printf("for potentially relevant license and attribution files.\n")
 	fmt.Printf("This set may include too many or too few files. Please audit carefully.\n")
 	fmt.Println()
-	fmt.Printf("To pin this dependency, add the following to %s and fill in missing information.\n", configFile)
+	fmt.Printf("To pin this dependency, add the following to the config file and fill in missing information.\n")
 	fmt.Println()
 	fmt.Printf("%s\n", string(out))
 }
