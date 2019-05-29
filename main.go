@@ -28,10 +28,10 @@ func mainCmd() error {
 	c.PersistentFlags().StringP("config", "c", ".ossls.yml", "path to configuration file")
 
 	c.AddCommand(cmd.AuditCommand())
-	c.AddCommand(cmd.ChecksumCommand())
-	c.AddCommand(cmd.ListCommand())
-	c.AddCommand(cmd.NoticeCommand())
-	c.AddCommand(cmd.ScanCommand())
+	//c.AddCommand(cmd.ChecksumCommand())
+	//c.AddCommand(cmd.ListCommand())
+	//c.AddCommand(cmd.NoticeCommand())
+	//c.AddCommand(cmd.ScanCommand())
 	c.AddCommand(versionCommand())
 
 	return c.Execute()
