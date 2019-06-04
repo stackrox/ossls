@@ -2,7 +2,6 @@ package resolver
 
 import (
 	"io/ioutil"
-	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -14,34 +13,42 @@ type constraint struct {
 	Branch   string `toml:"branch"`
 }
 
-type DepResolver struct {
-	VendorDir string `yaml:"vendor-dir"`
-	Manifest  string `yaml:"manifest"`
+//
+//func (r *DepResolver) Repos() ([]string, error) {
+//	constraints, err := parseManifest(r.Manifest)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	repos := make([]string, len(constraints))
+//
+//	for index, constraint := range constraints {
+//		repos[index] = filepath.Join(r.VendorDir, constraint.Name)
+//	}
+//
+//	return repos, nil
+//}
+
+type DepProject struct {
+	name string
 }
 
-func (r *DepResolver) Repos() ([]string, error) {
-	constraints, err := parseManifest(r.Manifest)
-	if err != nil {
-		return nil, err
-	}
-
-	repos := make([]string, len(constraints))
-
-	for index, constraint := range constraints {
-		repos[index] = filepath.Join(r.VendorDir, constraint.Name)
-	}
-
-	return repos, nil
+func (p DepProject) Name() string {
+	return p.name
 }
 
-func parseManifest(filename string) ([]constraint, error) {
+func (p DepProject) Optional() bool {
+	return false
+}
+
+func ProjectsFromDepLockfile(filename string) ([]Project, error) {
 	body, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
 	type lock struct {
-		Constraints []constraint `toml:"constraint"`
+		Constraints []constraint `toml:"projects"`
 	}
 
 	var l lock
@@ -49,5 +56,11 @@ func parseManifest(filename string) ([]constraint, error) {
 		return nil, err
 	}
 
-	return l.Constraints, nil
+	projects := make([]Project, len(l.Constraints))
+
+	for index, constraint := range l.Constraints {
+		projects[index] = DepProject{constraint.Name}
+	}
+
+	return projects, nil
 }
