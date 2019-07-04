@@ -15,6 +15,10 @@ type Project interface {
 }
 
 func LocateProjects(root string, projects []Project) (map[string]string, error) {
+	if len(projects) == 0 {
+		return nil, nil
+	}
+
 	locations := make(map[string]string)
 
 	sort.Slice(projects, func(i, j int) bool {
