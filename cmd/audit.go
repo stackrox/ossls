@@ -27,14 +27,20 @@ func AuditCommand() *cobra.Command {
 				return errors.Wrap(err, "failed to load configuration file "+configFlag)
 			}
 
-			yarnProjects, err := resolver.ProjectsFromYarnLockfile(cfg.Yarn.Lockfile)
-			if err != nil {
-				return errors.Wrap(err, "failed to discover dependencies from yarn lockfile "+cfg.Yarn.Lockfile)
+			var yarnProjects []resolver.Project
+			if cfg.Yarn.Lockfile != "" {
+				yarnProjects, err = resolver.ProjectsFromYarnLockfile(cfg.Yarn.Lockfile)
+				if err != nil {
+					return errors.Wrap(err, "failed to discover dependencies from yarn lockfile "+cfg.Yarn.Lockfile)
+				}
 			}
 
-			depProjects, err := resolver.ProjectsFromDepLockfile(cfg.Dep.Lockfile)
-			if err != nil {
-				return errors.Wrap(err, "failed to discover dependencies from dep lockfile "+cfg.Dep.Lockfile)
+			var depProjects []resolver.Project
+			if cfg.Dep.Lockfile != "" {
+				depProjects, err = resolver.ProjectsFromDepLockfile(cfg.Dep.Lockfile)
+				if err != nil {
+					return errors.Wrap(err, "failed to discover dependencies from dep lockfile "+cfg.Dep.Lockfile)
+				}
 			}
 
 			yarnResolved, err := resolver.LocateProjects(cfg.Yarn.NodeModulesDir, yarnProjects)
