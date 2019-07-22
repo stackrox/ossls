@@ -12,14 +12,19 @@ import (
 type Project interface {
 	Name() string
 	Optional() bool
+	Version() string
 }
 
-func LocateProjects(root string, projects []Project) (map[string]string, error) {
-	if len(projects) == 0 {
-		return nil, nil
-	}
+type Dependency struct {
+	Name      string
+	Alias     string
+	Files     []string
+	SourceDir string
+	Version   string
+}
 
-	locations := make(map[string]string)
+func LocateProjects(root string, projects []Project) (map[string]Dependency, error) {
+	locations := make(map[string]Dependency)
 
 	sort.Slice(projects, func(i, j int) bool {
 		return projects[i].Name() < projects[j].Name()
@@ -42,9 +47,15 @@ func LocateProjects(root string, projects []Project) (map[string]string, error) 
 				oldPath, found := locations[project.Name()]
 				switch {
 				case !found:
-					locations[project.Name()] = path
-				case len(path) < len(oldPath):
-					locations[project.Name()] = path
+					locations[project.Name()] = Dependency{
+						Name:      project.Name(),
+						Version:   project.Version(),
+						SourceDir: path,
+					}
+				case len(path) < len(oldPath.SourceDir):
+					dep := locations[project.Name()]
+					dep.SourceDir = path
+					locations[project.Name()] = dep
 				}
 				return nil
 			}
@@ -64,7 +75,6 @@ func LocateProjects(root string, projects []Project) (map[string]string, error) 
 		if !found {
 			return nil, errors.New("failed to locate project " + project.Name())
 		}
-
 	}
 
 	return locations, nil

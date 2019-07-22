@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -64,14 +65,20 @@ func AuditCommand() *cobra.Command {
 
 				if err != nil {
 					failures = true
-					color.Red("✗ %s (%s)", dependency.Name, dependency.SourceDir)
+					color.Red("✗ %s @%s (%s)", dependency.Name, dependency.Version, dependency.SourceDir)
 					color.Yellow("  ↳ %v", err)
 				} else if !quietFlag {
-					color.Green("✓ %s (%s)", dependency.Name, dependency.SourceDir)
+					color.Green("✓ %s @%s (%s)", dependency.Name, dependency.Version, dependency.SourceDir)
 					for _, file := range dependency.Files {
 						color.Blue("  ↳ %s/%s", dependency.Alias, filepath.Base(file))
 					}
 				}
+			}
+			if exportFlag != "" {
+				if err := exportManifest(exportFlag, dependencies); err != nil {
+					return err
+				}
+
 			}
 
 			if failures {
@@ -87,23 +94,19 @@ func AuditCommand() *cobra.Command {
 	return c
 }
 
-func joinDeps(patterns []string, sets ...map[string]string) []Dependency {
+func joinDeps(patterns []string, sets ...map[string]resolver.Dependency) []resolver.Dependency {
 	var total int
 	for _, set := range sets {
 		total += len(set)
 	}
 
-	dependencies := make([]Dependency, 0, total)
+	dependencies := make([]resolver.Dependency, 0, total)
 
 	for _, set := range sets {
-		for name, path := range set {
-			files := resolver.FindLicenseFiles(path, patterns)
-			dependency := Dependency{
-				Name:      name,
-				Alias:     flattenName(name),
-				Files:     files,
-				SourceDir: path,
-			}
+		for name, dependency := range set {
+			files := resolver.FindLicenseFiles(dependency.SourceDir, patterns)
+			dependency.Alias = flattenName(name)
+			dependency.Files = files
 			dependencies = append(dependencies, dependency)
 		}
 	}
@@ -119,7 +122,7 @@ func joinDeps(patterns []string, sets ...map[string]string) []Dependency {
 	return dependencies
 }
 
-func export(dependency Dependency, destination string) error {
+func export(dependency resolver.Dependency, destination string) error {
 	if err := os.MkdirAll(filepath.Join(destination, dependency.Alias), 0755); err != nil {
 		return err
 	}
@@ -133,6 +136,21 @@ func export(dependency Dependency, destination string) error {
 		}
 	}
 
+	return nil
+}
+
+func exportManifest(destination string, dependencies []resolver.Dependency) error {
+	manifestFile := filepath.Join(destination, "manifest.csv")
+	file, err := os.OpenFile(manifestFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fmt.Fprintln(file, "Name,Version,Directory")
+	for _, dep := range dependencies {
+		fmt.Fprintf(file, "%s,%s,./%s\n", dep.Name, dep.Version, dep.Alias)
+	}
 	return nil
 }
 
@@ -157,13 +175,6 @@ func copyFileContents(src, dst string) (err error) {
 	}
 	err = out.Sync()
 	return
-}
-
-type Dependency struct {
-	Name      string
-	Alias     string
-	Files     []string
-	SourceDir string
 }
 
 func flattenName(name string) string {
