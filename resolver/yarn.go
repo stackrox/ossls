@@ -1,8 +1,6 @@
 package resolver
 
-import (
-	"github.com/stackrox/ossls/yarn"
-)
+import "github.com/stackrox/ossls/yarn"
 
 func ProjectsFromYarnLockfile(filename string) ([]Project, error) {
 	entries, err := yarn.Parse(filename)
@@ -15,10 +13,13 @@ func ProjectsFromYarnLockfile(filename string) ([]Project, error) {
 
 type YarnProject struct {
 	name         string
+	version      string
 	optional     bool
 	optionaldeps map[string]struct{}
 	deps         map[string]struct{}
 }
+
+var _ Project = (*YarnProject)(nil)
 
 func (p YarnProject) Name() string {
 	return p.name
@@ -26,6 +27,10 @@ func (p YarnProject) Name() string {
 
 func (p YarnProject) Optional() bool {
 	return p.optional
+}
+
+func (p YarnProject) Version() string {
+	return p.version
 }
 
 func joinProjects(first YarnProject, second yarn.Entry) YarnProject {
@@ -61,6 +66,7 @@ func asProjects(entries []yarn.Entry) []Project {
 				name:         entry.Name,
 				optionaldeps: depMap(entry.OptionalDependencies),
 				deps:         depMap(entry.Dependencies),
+				version:      entry.Version,
 			}
 		}
 

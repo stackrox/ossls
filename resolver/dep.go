@@ -13,25 +13,12 @@ type constraint struct {
 	Branch   string `toml:"branch"`
 }
 
-//
-//func (r *DepResolver) Repos() ([]string, error) {
-//	constraints, err := parseManifest(r.Manifest)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	repos := make([]string, len(constraints))
-//
-//	for index, constraint := range constraints {
-//		repos[index] = filepath.Join(r.VendorDir, constraint.Name)
-//	}
-//
-//	return repos, nil
-//}
-
 type DepProject struct {
-	name string
+	name    string
+	version string
 }
+
+var _ Project = (*DepProject)(nil)
 
 func (p DepProject) Name() string {
 	return p.name
@@ -39,6 +26,10 @@ func (p DepProject) Name() string {
 
 func (p DepProject) Optional() bool {
 	return false
+}
+
+func (p DepProject) Version() string {
+	return p.version
 }
 
 func ProjectsFromDepLockfile(filename string) ([]Project, error) {
@@ -59,7 +50,14 @@ func ProjectsFromDepLockfile(filename string) ([]Project, error) {
 	projects := make([]Project, len(l.Constraints))
 
 	for index, constraint := range l.Constraints {
-		projects[index] = DepProject{constraint.Name}
+		version := constraint.Version
+		if version == "" {
+			version = constraint.Revision
+		}
+		projects[index] = DepProject{
+			name:    constraint.Name,
+			version: version,
+		}
 	}
 
 	return projects, nil
