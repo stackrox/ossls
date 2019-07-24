@@ -114,11 +114,6 @@ func joinDeps(patterns []string, sets ...map[string]resolver.Dependency) []resol
 	sort.Slice(dependencies, func(i, j int) bool {
 		return dependencies[i].Name < dependencies[j].Name
 	})
-
-	for _, set := range sets {
-		total += len(set)
-	}
-
 	return dependencies
 }
 

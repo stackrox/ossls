@@ -28,6 +28,7 @@ func (p YarnProject) Name() string {
 func (p YarnProject) Optional() bool {
 	return p.optional
 }
+
 func (p YarnProject) Version() string {
 	return p.version
 }
