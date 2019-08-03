@@ -7,9 +7,14 @@ import (
 )
 
 type Config struct {
-	Dep      DepConfig  `yaml:"dep"`
-	Yarn     YarnConfig `yaml:"yarn"`
-	Patterns []string   `yaml:"patterns"`
+	Dep      DepConfig   `yaml:"dep"`
+	GoMod    GoModConfig `yaml:"gomod"`
+	Yarn     YarnConfig  `yaml:"yarn"`
+	Patterns []string    `yaml:"patterns"`
+}
+
+type GoModConfig struct {
+	GoModFile string `yaml:"mod-file"`
 }
 
 type DepConfig struct {

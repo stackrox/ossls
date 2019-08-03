@@ -23,6 +23,21 @@ type Dependency struct {
 	Version   string
 }
 
+func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error) {
+	goPath := GoPath()
+	result := make(map[string]Dependency, len(projects))
+
+	for _, project := range projects {
+		result[project.Name()] = Dependency{
+			Name:      project.Name(),
+			Version:   project.Version(),
+			SourceDir: filepath.Join(goPath, "pkg/mod", project.sourcePath()),
+		}
+	}
+
+	return result, nil
+}
+
 func LocateProjects(root string, projects []Project) (map[string]Dependency, error) {
 	locations := make(map[string]Dependency)
 
