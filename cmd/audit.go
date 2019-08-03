@@ -44,17 +44,39 @@ func AuditCommand() *cobra.Command {
 				}
 			}
 
-			yarnResolved, err := resolver.LocateProjects(cfg.Yarn.NodeModulesDir, yarnProjects)
-			if err != nil {
-				return errors.Wrap(err, "failed to locate js dependencies in dir "+cfg.Yarn.NodeModulesDir)
+			var goModProjects []resolver.GoModProject
+			if cfg.GoMod.GoModFile != "" {
+				goModProjects, err = resolver.ProjectsFromGoModFile(cfg.GoMod.GoModFile)
+				if err != nil {
+					return errors.Wrapf(err, "failed to discover dependencies from go.mod file %s", cfg.GoMod.GoModFile)
+				}
 			}
 
-			depResolved, err := resolver.LocateProjects(cfg.Dep.VendorDir, depProjects)
-			if err != nil {
-				return errors.Wrap(err, "failed to locate go dependencies in dir "+cfg.Dep.VendorDir)
+			var yarnResolved map[string]resolver.Dependency
+			if len(yarnProjects) > 0 {
+				yarnResolved, err = resolver.LocateProjects(cfg.Yarn.NodeModulesDir, yarnProjects)
+				if err != nil {
+					return errors.Wrap(err, "failed to locate js dependencies in dir "+cfg.Yarn.NodeModulesDir)
+				}
 			}
 
-			dependencies := joinDeps(cfg.Patterns, yarnResolved, depResolved)
+			var depResolved map[string]resolver.Dependency
+			if len(depProjects) > 0 {
+				depResolved, err = resolver.LocateProjects(cfg.Dep.VendorDir, depProjects)
+				if err != nil {
+					return errors.Wrap(err, "failed to locate go dependencies in dir "+cfg.Dep.VendorDir)
+				}
+			}
+
+			var goModResolved map[string]resolver.Dependency
+			if len(goModProjects) > 0 {
+				goModResolved, err = resolver.LocateGoModProjects(goModProjects)
+				if err != nil {
+					return errors.Wrap(err, "failed to locate gomod dependencies")
+				}
+			}
+
+			dependencies := joinDeps(cfg.Patterns, yarnResolved, depResolved, goModResolved)
 
 			var failures bool
 			for _, dependency := range dependencies {
