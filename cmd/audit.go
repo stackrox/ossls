@@ -52,11 +52,17 @@ func AuditCommand() *cobra.Command {
 				}
 			}
 
-			var yarnResolved map[string]resolver.Dependency
+			var yarnResolved = make(map[string]resolver.Dependency)
 			if len(yarnProjects) > 0 {
-				yarnResolved, err = resolver.LocateProjects(cfg.Yarn.NodeModulesDir, yarnProjects)
-				if err != nil {
-					return errors.Wrap(err, "failed to locate js dependencies in dir "+cfg.Yarn.NodeModulesDir)
+				for _, dir := range cfg.Yarn.NodeModulesDirs {
+					fmt.Printf("Processing JS deps directory: %s \n", dir)
+					currentDeps, err := resolver.LocateProjects(dir, yarnProjects)
+					if err != nil {
+						return errors.Wrap(err, "failed to locate js dependencies in dir "+dir)
+					}
+					for k, v := range currentDeps {
+						yarnResolved[k] = v
+					}
 				}
 			}
 
