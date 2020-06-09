@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/ossls/resolver"
 )
 
+// AuditCommand implements an audit of dependencies
 func AuditCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "audit",
@@ -55,13 +56,17 @@ func AuditCommand() *cobra.Command {
 			var yarnResolved = make(map[string]resolver.Dependency)
 			if len(yarnProjects) > 0 {
 				for _, dir := range cfg.Yarn.NodeModulesDirs {
-					fmt.Printf("Processing JS deps directory: %s \n", dir)
+					// fmt.Printf("Processing JS deps directory: %s \n", dir)
 					currentDeps, err := resolver.LocateProjects(dir, yarnProjects)
 					if err != nil {
-						return errors.Wrap(err, "failed to locate js dependencies in dir "+dir)
+						return errors.Wrapf(err, "failed to locate js dependencies in dir %q", dir)
 					}
-					for k, v := range currentDeps {
-						yarnResolved[k] = v
+					for _, v := range currentDeps {
+						// fmt.Printf("Target dependency: %s \n", k)
+						keyWithVersion := v.Name + v.Version
+						// fmt.Printf("Target dependency key with version: %s \n", keyWithVersion)
+
+						yarnResolved[keyWithVersion] = v
 					}
 				}
 			}
@@ -69,6 +74,8 @@ func AuditCommand() *cobra.Command {
 			var depResolved map[string]resolver.Dependency
 			if len(depProjects) > 0 {
 				depResolved, err = resolver.LocateProjects(cfg.Dep.VendorDir, depProjects)
+				// fmt.Printf("Resolved dependency: %s \n", depResolved)
+
 				if err != nil {
 					return errors.Wrap(err, "failed to locate go dependencies in dir "+cfg.Dep.VendorDir)
 				}
