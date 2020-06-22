@@ -18,8 +18,8 @@ type GoModConfig struct {
 }
 
 type DepConfig struct {
-	VendorDir string `yaml:"vendor-dir"`
-	Lockfile  string `yaml:"lockfile"`
+	VendorDirs []string `yaml:"vendor-dirs"`
+	Lockfile   string   `yaml:"lockfile"`
 }
 
 type YarnConfig struct {

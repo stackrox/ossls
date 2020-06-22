@@ -38,47 +38,49 @@ func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error)
 	return result, nil
 }
 
-func LocateProjects(root string, projects []Project) (map[string]Dependency, error) {
+func LocateProjects(roots []string, projects []Project) (map[string]Dependency, error) {
 	locations := make(map[string]Dependency)
 
 	sort.Slice(projects, func(i, j int) bool {
 		return projects[i].Name() < projects[j].Name()
 	})
 
-	if err := filepath.Walk(root,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return errors.Wrap(err, "failed to walk "+path)
-			}
-			if !info.IsDir() {
-				return nil
-			}
-
-			for _, project := range projects {
-				if !strings.HasSuffix(path, "/"+project.Name()) {
-					continue
+	for _, dir := range roots {
+		if err := filepath.Walk(dir,
+			func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return errors.Wrap(err, "failed to walk "+path)
+				}
+				if !info.IsDir() {
+					return nil
 				}
 
-				oldPath, found := locations[project.Name()]
-				switch {
-				case !found:
-					locations[project.Name()] = Dependency{
-						Name:      project.Name(),
-						Version:   project.Version(),
-						SourceDir: path,
+				for _, project := range projects {
+					if !strings.HasSuffix(path, "/"+project.Name()) {
+						continue
 					}
-				case len(path) < len(oldPath.SourceDir):
-					dep := locations[project.Name()]
-					dep.SourceDir = path
-					locations[project.Name()] = dep
-				}
-				return nil
-			}
 
-			return nil
-		},
-	); err != nil {
-		return nil, err
+					oldPath, found := locations[project.Name()]
+					switch {
+					case !found:
+						locations[project.Name()] = Dependency{
+							Name:      project.Name(),
+							Version:   project.Version(),
+							SourceDir: path,
+						}
+					case len(path) < len(oldPath.SourceDir):
+						dep := locations[project.Name()]
+						dep.SourceDir = path
+						locations[project.Name()] = dep
+					}
+					return nil
+				}
+
+				return nil
+			},
+		); err != nil {
+			return nil, err
+		}
 	}
 
 	// Sanity check that all projects were located successfully.
