@@ -18,13 +18,13 @@ type GoModConfig struct {
 }
 
 type DepConfig struct {
-	VendorDir string `yaml:"vendor-dir"`
-	Lockfile  string `yaml:"lockfile"`
+	VendorDirs []string `yaml:"vendor-dirs"`
+	Lockfile   string   `yaml:"lockfile"`
 }
 
 type YarnConfig struct {
-	NodeModulesDir string `yaml:"node-modules-dir"`
-	Lockfile       string `yaml:"lockfile"`
+	NodeModulesDirs []string `yaml:"node-modules-dirs"`
+	Lockfile        string   `yaml:"lockfile"`
 }
 
 func Load(filename string) (*Config, error) {
