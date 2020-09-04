@@ -113,7 +113,6 @@ func AuditCommand() *cobra.Command {
 				if err := exportManifest(exportFlag, dependencies); err != nil {
 					return err
 				}
-
 			}
 
 			if failures {

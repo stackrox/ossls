@@ -24,18 +24,27 @@ type Dependency struct {
 }
 
 func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error) {
-	goPath := GoPath()
-	result := make(map[string]Dependency, len(projects))
+	deps := make(map[string]Dependency, len(projects))
 
 	for _, project := range projects {
-		result[project.Name()] = Dependency{
-			Name:      project.Name(),
-			Version:   project.Version(),
-			SourceDir: filepath.Join(goPath, "pkg/mod", project.sourcePath()),
+		if strings.HasPrefix(project.Path, "github.com/stackrox/") {
+			continue
 		}
+
+		version := project.Version
+		if project.Replace != nil && project.Replace.Path == project.Path {
+			version = project.Replace.Version
+		}
+
+		dep := Dependency{
+			Name:      project.Path,
+			Version:   version,
+			SourceDir: project.Dir,
+		}
+		deps[dep.Name] = dep
 	}
 
-	return result, nil
+	return deps, nil
 }
 
 func LocateProjects(roots []string, projects []Project) (map[string]Dependency, error) {
