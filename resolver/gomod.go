@@ -1,62 +1,56 @@
 package resolver
 
 import (
-	"fmt"
-	"io/ioutil"
+	"encoding/json"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
 
-	"github.com/stackrox/ossls/gomod/modfile"
-	"github.com/stackrox/ossls/gomod/module"
+	"github.com/pkg/errors"
 )
 
 type GoModProject struct {
-	pkg         module.Version
-	replacement *module.Version
-}
-
-var _ Project = (*GoModProject)(nil)
-
-func (p GoModProject) Name() string {
-	return p.pkg.Path
-}
-
-func (p GoModProject) Optional() bool {
-	return false
-}
-
-func (p GoModProject) Version() string {
-	return p.pkg.Version
-}
-
-func (p GoModProject) sourcePath() string {
-	effective := p.replacement
-	if effective == nil {
-		effective = &p.pkg
-	}
-	return fmt.Sprintf("%s@%s", effective.Path, effective.Version)
+	Path    string
+	Version string
+	Dir     string
+	Replace *GoModProject
 }
 
 func ProjectsFromGoModFile(filename string) ([]GoModProject, error) {
-	contents, err := ioutil.ReadFile(filename)
+	cmd := exec.Command("go", "list", "-json", "-m", "all")
+	cmd.Dir = filepath.Dir(filename)
+	cmd.Stderr = os.Stderr
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create pipe for redirecting stdout")
 	}
-
-	goModFile, err := modfile.Parse(filename, contents, nil)
-
-	replacementMap := make(map[module.Version]module.Version)
-	for _, replace := range goModFile.Replace {
-		replacementMap[replace.Old] = replace.New
-	}
+	defer func() {
+		_ = stdout.Close()
+	}()
 
 	var projects []GoModProject
-	for _, requirement := range goModFile.Require {
-		project := GoModProject{
-			pkg: requirement.Mod,
+	errC := make(chan error, 1)
+	go func() {
+		jsonDec := json.NewDecoder(stdout)
+		var project GoModProject
+		err := jsonDec.Decode(&project)
+		for err == nil {
+			projects = append(projects, project)
+			err = jsonDec.Decode(&project)
 		}
-		if repl, ok := replacementMap[requirement.Mod]; ok {
-			project.replacement = &repl
+		if err == io.EOF {
+			err = nil
 		}
-		projects = append(projects, project)
+		errC <- err
+	}()
+
+	if err := cmd.Run(); err != nil {
+		return nil, errors.Wrap(err, "error running go list command")
+	}
+	if err := <-errC; err != nil {
+		return nil, errors.Wrap(err, "error parsing go list output")
 	}
 
 	return projects, nil
