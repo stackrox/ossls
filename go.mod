@@ -10,6 +10,6 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.4
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/sys v0.0.0-20190529164535-6a60838ec259 // indirect
+	golang.org/x/tools v0.0.0-20200904185747-39188db58858 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 )
