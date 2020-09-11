@@ -89,7 +89,10 @@ func AuditCommand() *cobra.Command {
 				}
 			}
 
-			dependencies := joinDeps(cfg.Patterns, yarnResolved, depResolved, goModResolved)
+			dependencies, err := joinDeps(cfg.PatternConfig, yarnResolved, depResolved, goModResolved)
+			if err != nil {
+				return errors.Wrap(err, "resolving dependencies")
+			}
 
 			var failures bool
 			for _, dependency := range dependencies {
@@ -128,17 +131,25 @@ func AuditCommand() *cobra.Command {
 	return c
 }
 
-func joinDeps(patterns []string, sets ...map[string]resolver.Dependency) []resolver.Dependency {
+func joinDeps(patterns config.PatternConfig, sets ...map[string]resolver.Dependency) ([]resolver.Dependency, error) {
 	var total int
 	for _, set := range sets {
 		total += len(set)
+	}
+
+	matcher, err := resolver.CompilePatternConfig(patterns)
+	if err != nil {
+		return nil, errors.Wrap(err, "compiling patterns")
 	}
 
 	dependencies := make([]resolver.Dependency, 0, total)
 
 	for _, set := range sets {
 		for name, dependency := range set {
-			files := resolver.FindLicenseFiles(dependency.SourceDir, patterns)
+			files, err := resolver.FindLicenseFiles(dependency.SourceDir, matcher)
+			if err != nil {
+				return nil, errors.Wrapf(err, "finding license files in directory %s", dependency.SourceDir)
+			}
 			dependency.Alias = flattenName(name)
 			dependency.Files = files
 			dependencies = append(dependencies, dependency)
@@ -148,7 +159,7 @@ func joinDeps(patterns []string, sets ...map[string]resolver.Dependency) []resol
 	sort.Slice(dependencies, func(i, j int) bool {
 		return dependencies[i].Name < dependencies[j].Name
 	})
-	return dependencies
+	return dependencies, nil
 }
 
 func export(dependency resolver.Dependency, destination string) error {

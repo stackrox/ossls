@@ -1,39 +1,27 @@
 package resolver
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
-func FindLicenseFiles(dirname string, patterns []string) []string {
-	var (
-		foundFiles = []string{}
-		//patterns   = []string{
-		//	"*AUTHOR*",
-		//	"*COPYING*",
-		//	"*LICENSE*",
-		//	"*LICENCE*",
-		//	"*NOTICE*",
-		//	"*author*",
-		//	"*copying*",
-		//	"*license*",
-		//	"*License*",
-		//	"*notice*",
-		//	"package.json",
-		//}
-	)
+func FindLicenseFiles(dirname string, matcher Matcher) ([]string, error) {
+	var foundFiles []string
 
-	for _, pattern := range patterns {
-		glob := filepath.Join(dirname, pattern)
-		matches, _ := filepath.Glob(glob)
-		for _, match := range matches {
-			info, err := os.Stat(match)
-			if err != nil || info.IsDir() {
-				continue
-			}
-			foundFiles = append(foundFiles, match)
+	entries, err := ioutil.ReadDir(dirname)
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading directory %s", dirname)
+	}
+	for _, entry := range entries {
+		if entry.Mode()&os.ModeType != 0 {
+			continue
+		}
+		if matcher(entry.Name()) {
+			foundFiles = append(foundFiles, filepath.Join(dirname, entry.Name()))
 		}
 	}
-
-	return foundFiles
+	return foundFiles, nil
 }
