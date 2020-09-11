@@ -1,30 +1,37 @@
 package config
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
+type PatternConfig struct {
+	Patterns        []string `json:"patterns"`
+	ExcludePatterns []string `json:"excludePatterns,omitempty"`
+}
+
 type Config struct {
-	Dep      DepConfig   `yaml:"dep"`
-	GoMod    GoModConfig `yaml:"gomod"`
-	Yarn     YarnConfig  `yaml:"yarn"`
-	Patterns []string    `yaml:"patterns"`
+	Dep   DepConfig   `json:"dep"`
+	GoMod GoModConfig `json:"gomod"`
+	Yarn  YarnConfig  `json:"yarn"`
+	PatternConfig
 }
 
 type GoModConfig struct {
-	GoModFile string `yaml:"mod-file"`
+	GoModFile string `json:"mod-file"`
 }
 
 type DepConfig struct {
-	VendorDirs []string `yaml:"vendor-dirs"`
-	Lockfile   string   `yaml:"lockfile"`
+	VendorDirs []string `json:"vendor-dirs"`
+	Lockfile   string   `json:"lockfile"`
 }
 
 type YarnConfig struct {
-	NodeModulesDirs []string `yaml:"node-modules-dirs"`
-	Lockfile        string   `yaml:"lockfile"`
+	NodeModulesDirs []string `json:"node-modules-dirs"`
+	Lockfile        string   `json:"lockfile"`
 }
 
 func Load(filename string) (*Config, error) {
@@ -33,8 +40,15 @@ func Load(filename string) (*Config, error) {
 		return nil, err
 	}
 
+	jsonBytes, err := yaml.YAMLToJSON(body)
+	if err != nil {
+		return nil, err
+	}
+	jsonDec := json.NewDecoder(bytes.NewReader(jsonBytes))
+	jsonDec.DisallowUnknownFields()
+
 	var config Config
-	if err := yaml.UnmarshalStrict(body, &config); err != nil {
+	if err := jsonDec.Decode(&config); err != nil {
 		return nil, err
 	}
 
