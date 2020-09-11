@@ -73,7 +73,10 @@ func compilePattern(pattern string) (Matcher, error) {
 	}
 
 	return func(name string) bool {
-		matched, _ := filepath.Match(pattern, name)
+		matched, err := filepath.Match(pattern, name)
+		if err != nil {
+			panic(errors.Wrapf(err, "unexpected error matching pattern %q", pattern))
+		}
 		return matched
 	}, nil
 }
