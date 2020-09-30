@@ -226,7 +226,10 @@ func flattenName(name string) string {
 
 func exportDependencyFile(src, dstDir string) error {
 	dstFile := filepath.Base(src)
-	// Omit version information and only copy license data for NPM packages
+	// Do not directly copy the package json file to avoid false positives
+	// from image scanners for developer dependencies -- only export a subset of fields.
+	// Multiple versions of the same package are exported into their own
+	// directory, with separate licenses.
 	if strings.ToLower(dstFile) == "package.json" {
 		dstFile = "license-info.json"
 		return copyPackageJsonContents(src, filepath.Join(dstDir, dstFile))
@@ -262,19 +265,30 @@ func copyPackageJsonContents(packageJsonFile, licenseInfoJsonFile string) error 
 		return err
 	}
 
-	// Note: we handle json in an unstructured manner because some packages may represent license
-	// in a deprecated form (array of license objects instead of SPDX format string)
+	// Note: Unmarshal package.json file as unstructured json because some packages may represent license
+	// in a deprecated form using an array of license objects instead of a SPDX format string
+	// Format details: https://docs.npmjs.com/files/package.json#license
 	var inputData map[string]interface{}
 	if err = json.Unmarshal(pkgJsonData, &inputData); err != nil {
 		return err
 	}
-	outputData := make(map[string]interface{})
 
-	copyJsonFieldIfExists("name", inputData, outputData)
-	copyJsonFieldIfExists("license", inputData, outputData)
-	copyJsonFieldIfExists("author", inputData, outputData)
-	copyJsonFieldIfExists("contributors", inputData, outputData)
-	copyJsonFieldIfExists("repository", inputData, outputData)
+	type licenseInfo struct {
+		License  interface{} `json:"license"`
+		Metadata interface{} `json:"metadata"`
+	}
+
+	metadata := make(map[string]interface{})
+	copyJsonFieldIfExists("name", inputData, metadata)
+	copyJsonFieldIfExists("author", inputData, metadata)
+	copyJsonFieldIfExists("contributors", inputData, metadata)
+	copyJsonFieldIfExists("repository", inputData, metadata)
+
+	outputData := licenseInfo{}
+	if license, ok := inputData["license"]; ok {
+		outputData.License = license
+	}
+	outputData.Metadata = metadata
 
 	bytes, err := JSONMarshalIndentWithoutEscape(outputData)
 	if err != nil {
