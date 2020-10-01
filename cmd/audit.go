@@ -229,8 +229,7 @@ func exportDependencyFile(src, dstDir string) error {
 	if strings.ToLower(dstFile) == "package.json" {
 		// Do not directly copy the package json file to avoid false positives
 		// from image scanners for developer dependencies -- only export a subset of fields.
-		dstFile = "license-info.json"
-		return copyPackageJsonContents(src, filepath.Join(dstDir, dstFile))
+		return copyPackageJsonContents(src, filepath.Join(dstDir, "license-info.json"))
 	}
 	return copyFileContents(src, filepath.Join(dstDir, dstFile))
 }
