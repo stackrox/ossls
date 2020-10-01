@@ -241,20 +241,15 @@ func copyJsonFieldIfExists(fieldName string, in, out map[string]interface{}) {
 	}
 }
 
-func JSONMarshalIndentWithoutEscape(t interface{}) ([]byte, error) {
+func jsonMarshalIndentWithoutEscape(t interface{}) ([]byte, error) {
 	buf := &bytes.Buffer{}
 	encoder := json.NewEncoder(buf)
 	encoder.SetEscapeHTML(false)
-	err := encoder.Encode(t)
-	if err != nil {
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(t); err != nil {
 		return nil, err
 	}
-	indentBuf := &bytes.Buffer{}
-	err = json.Indent(indentBuf, buf.Bytes(), "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return indentBuf.Bytes(), err
+	return buf.Bytes(), nil
 }
 
 func copyPackageJsonContents(packageJsonFile, licenseInfoJsonFile string) error {
@@ -271,24 +266,20 @@ func copyPackageJsonContents(packageJsonFile, licenseInfoJsonFile string) error 
 		return err
 	}
 
-	type licenseInfo struct {
-		License  interface{} `json:"license"`
-		Metadata interface{} `json:"metadata"`
-	}
-
 	metadata := make(map[string]interface{})
 	copyJsonFieldIfExists("name", inputData, metadata)
 	copyJsonFieldIfExists("author", inputData, metadata)
 	copyJsonFieldIfExists("contributors", inputData, metadata)
 	copyJsonFieldIfExists("repository", inputData, metadata)
 
-	outputData := licenseInfo{}
-	if license, ok := inputData["license"]; ok {
-		outputData.License = license
-	}
-	outputData.Metadata = metadata
-
-	bytes, err := JSONMarshalIndentWithoutEscape(outputData)
+	bytes, err := jsonMarshalIndentWithoutEscape(
+		struct {
+			License  interface{} `json:"license"`
+			Metadata interface{} `json:"metadata"`
+		}{
+			inputData["license"],
+			metadata,
+		})
 	if err != nil {
 		return err
 	}
