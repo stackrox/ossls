@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -168,9 +171,9 @@ func export(dependency resolver.Dependency, destination string) error {
 	}
 
 	for _, file := range dependency.Files {
-		if err := copyFileContents(
+		if err := exportDependencyFile(
 			file,
-			filepath.Join(destination, dependency.Alias, filepath.Base(file)),
+			filepath.Join(destination, dependency.Alias),
 		); err != nil {
 			return err
 		}
@@ -219,4 +222,68 @@ func copyFileContents(src, dst string) (err error) {
 
 func flattenName(name string) string {
 	return strings.Replace(name, "/", "-", -1)
+}
+
+func exportDependencyFile(src, dstDir string) error {
+	dstFile := filepath.Base(src)
+	if strings.ToLower(dstFile) == "package.json" {
+		// Do not directly copy the package json file to avoid false positives
+		// from image scanners for developer dependencies -- only export a subset of fields.
+		return copyPackageJsonContents(src, filepath.Join(dstDir, "license-info.json"))
+	}
+	return copyFileContents(src, filepath.Join(dstDir, dstFile))
+}
+
+func copyJsonFieldIfExists(fieldName string, in, out map[string]interface{}) {
+	if field, ok := in[fieldName]; ok {
+		out[fieldName] = field
+	}
+}
+
+func jsonMarshalIndentWithoutEscape(t interface{}) ([]byte, error) {
+	buf := &bytes.Buffer{}
+	encoder := json.NewEncoder(buf)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(t); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func copyPackageJsonContents(packageJsonFile, licenseInfoJsonFile string) error {
+	pkgJsonData, err := ioutil.ReadFile(packageJsonFile)
+	if err != nil {
+		return err
+	}
+
+	// Note: Unmarshal package.json file as unstructured json because some packages may represent license
+	// in a deprecated form using an array of license objects instead of a SPDX format string
+	// Format details: https://docs.npmjs.com/files/package.json#license
+	var inputData map[string]interface{}
+	if err = json.Unmarshal(pkgJsonData, &inputData); err != nil {
+		return err
+	}
+
+	metadata := make(map[string]interface{})
+	copyJsonFieldIfExists("name", inputData, metadata)
+	copyJsonFieldIfExists("author", inputData, metadata)
+	copyJsonFieldIfExists("contributors", inputData, metadata)
+	copyJsonFieldIfExists("repository", inputData, metadata)
+
+	bytes, err := jsonMarshalIndentWithoutEscape(
+		struct {
+			License  interface{} `json:"license"`
+			Metadata interface{} `json:"metadata"`
+		}{
+			inputData["license"],
+			metadata,
+		})
+	if err != nil {
+		return err
+	}
+	if err = ioutil.WriteFile(licenseInfoJsonFile, bytes, 0644); err != nil {
+		return err
+	}
+	return nil
 }
