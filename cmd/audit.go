@@ -226,11 +226,9 @@ func flattenName(name string) string {
 
 func exportDependencyFile(src, dstDir string) error {
 	dstFile := filepath.Base(src)
-	// Do not directly copy the package json file to avoid false positives
-	// from image scanners for developer dependencies -- only export a subset of fields.
-	// Multiple versions of the same package are exported into their own
-	// directory, with separate licenses.
 	if strings.ToLower(dstFile) == "package.json" {
+		// Do not directly copy the package json file to avoid false positives
+		// from image scanners for developer dependencies -- only export a subset of fields.
 		dstFile = "license-info.json"
 		return copyPackageJsonContents(src, filepath.Join(dstDir, dstFile))
 	}

@@ -60,6 +60,7 @@ func asProjects(entries []yarn.Entry) []Project {
 
 		first, found := projectSet[entry.Name]
 		if found {
+			// TODO(ROX-5073) Software licenses may differ across versions
 			projectSet[entry.Name] = joinProjects(first, entry)
 		} else {
 			projectSet[entry.Name] = YarnProject{
