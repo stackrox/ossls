@@ -26,9 +26,9 @@ func ProjectsFromGoModFile(filename string) ([]GoModProject, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create pipe for redirecting stdout")
 	}
-	defer func() {
-		_ = stdout.Close()
-	}()
+	if err := cmd.Start(); err != nil {
+		return nil, errors.Wrap(err, "error starting go list command")
+	}
 
 	var projects []GoModProject
 	errC := make(chan error, 1)
@@ -46,11 +46,11 @@ func ProjectsFromGoModFile(filename string) ([]GoModProject, error) {
 		errC <- err
 	}()
 
-	if err := cmd.Run(); err != nil {
-		return nil, errors.Wrap(err, "error running go list command")
-	}
 	if err := <-errC; err != nil {
 		return nil, errors.Wrap(err, "error parsing go list output")
+	}
+	if err := cmd.Wait(); err != nil {
+		return nil, errors.Wrap(err, "error waiting for go list command")
 	}
 
 	return projects, nil
