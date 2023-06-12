@@ -27,18 +27,9 @@ func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error)
 	deps := make(map[string]Dependency, len(projects))
 
 	for _, project := range projects {
-		if strings.HasPrefix(project.Path, "github.com/stackrox/") {
-			continue
-		}
-
-		version := project.Version
-		if project.Replace != nil && project.Replace.Path == project.Path {
-			version = project.Replace.Version
-		}
-
 		dep := Dependency{
 			Name:      project.Path,
-			Version:   version,
+			Version:   project.Version,
 			SourceDir: project.Dir,
 		}
 		deps[dep.Name] = dep

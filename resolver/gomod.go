@@ -14,11 +14,10 @@ type GoModProject struct {
 	Path    string
 	Version string
 	Dir     string
-	Replace *GoModProject
 }
 
 func ProjectsFromGoModFile(filename string) ([]GoModProject, error) {
-	cmd := exec.Command("go", "list", "-json", "-m", "all")
+	cmd := exec.Command("go", "mod", "download", "-json")
 	cmd.Dir = filepath.Dir(filename)
 	cmd.Stderr = os.Stderr
 
@@ -37,7 +36,11 @@ func ProjectsFromGoModFile(filename string) ([]GoModProject, error) {
 		var project GoModProject
 		err := jsonDec.Decode(&project)
 		for err == nil {
-			projects = append(projects, project)
+			if project.Dir != "" {
+				projects = append(projects, project)
+			}
+
+			project = GoModProject{}
 			err = jsonDec.Decode(&project)
 		}
 		if err == io.EOF {
