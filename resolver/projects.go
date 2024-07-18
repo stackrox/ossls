@@ -3,6 +3,7 @@ package resolver
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -33,6 +34,28 @@ func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error)
 			SourceDir: project.Dir,
 		}
 		deps[dep.Name] = dep
+	}
+
+	return deps, nil
+}
+
+func LocateNpmPackageLockV3Projects(root string, projects []Project) (map[string]Dependency, error) {
+	nodeModulePrefixRegexp := regexp.MustCompile(`.*node_modules\/`)
+	deps := make(map[string]Dependency, len(projects))
+
+	for _, project := range projects {
+		baseDependencyName := nodeModulePrefixRegexp.ReplaceAllString(project.Name(), "")
+		sourceDir := filepath.Join(root, project.Name())
+		if _, err := os.Stat(sourceDir); os.IsNotExist(err) {
+			// If a direct path to a nested dependency is not found, it was hoisted to the root.
+			sourceDir = filepath.Join(root, baseDependencyName)
+		}
+		dep := Dependency{
+			Name:      baseDependencyName,
+			Version:   project.Version(),
+			SourceDir: sourceDir,
+		}
+		deps[baseDependencyName+dep.Version] = dep
 	}
 
 	return deps, nil
