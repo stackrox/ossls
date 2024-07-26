@@ -40,6 +40,15 @@ func AuditCommand() *cobra.Command {
 				}
 			}
 
+			var npmProjects []resolver.Project
+			if cfg.Npm.Lockfile != "" {
+				npmProjects, err = resolver.ProjectsFromNpmLockfileV3(cfg.Npm.Lockfile)
+
+				if err != nil {
+					return errors.Wrap(err, "failed to discover dependencies from npm lockfile "+cfg.Npm.Lockfile)
+				}
+			}
+
 			var depProjects []resolver.Project
 			if cfg.Dep.Lockfile != "" {
 				depProjects, err = resolver.ProjectsFromDepLockfile(cfg.Dep.Lockfile)
@@ -59,10 +68,10 @@ func AuditCommand() *cobra.Command {
 			var yarnResolved = make(map[string]resolver.Dependency)
 			if len(yarnProjects) > 0 {
 				dirList := cfg.Yarn.NodeModulesDirs
-				fmt.Printf("Processing JS deps directories: %v \n", dirList)
+				fmt.Printf("Processing JS (yarn) deps directories: %v \n", dirList)
 				currentDeps, err := resolver.LocateProjects(dirList, yarnProjects)
 				if err != nil {
-					return errors.Wrapf(err, "failed to locate js dependencies in dirs %v", dirList)
+					return errors.Wrapf(err, "failed to locate js dependencies (yarn) in dirs %v", dirList)
 				}
 				for _, v := range currentDeps {
 					fmt.Printf("Target dependency: %s \n", v)
@@ -71,7 +80,18 @@ func AuditCommand() *cobra.Command {
 
 					yarnResolved[keyWithVersion] = v
 				}
+			}
 
+			var npmResolved = make(map[string]resolver.Dependency)
+			if len(npmProjects) > 0 {
+				rootDir := cfg.Npm.NodeModulesDir
+				currentDeps, err := resolver.LocateNpmPackageLockV3Projects(rootDir, npmProjects)
+				if err != nil {
+					return errors.Wrapf(err, "failed to locate js dependencies (npm) in dir %v", rootDir)
+				}
+				for versionedKey, dep := range currentDeps {
+					npmResolved[versionedKey] = dep
+				}
 			}
 
 			var depResolved map[string]resolver.Dependency
@@ -92,7 +112,7 @@ func AuditCommand() *cobra.Command {
 				}
 			}
 
-			dependencies, err := joinDeps(cfg.PatternConfig, yarnResolved, depResolved, goModResolved)
+			dependencies, err := joinDeps(cfg.PatternConfig, yarnResolved, npmResolved, depResolved, goModResolved)
 			if err != nil {
 				return errors.Wrap(err, "resolving dependencies")
 			}
