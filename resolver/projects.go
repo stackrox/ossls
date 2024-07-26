@@ -24,6 +24,8 @@ type Dependency struct {
 	Version   string
 }
 
+var nodeModulePrefixRegexp = regexp.MustCompile(`.*node_modules\/`)
+
 func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error) {
 	deps := make(map[string]Dependency, len(projects))
 
@@ -40,14 +42,18 @@ func LocateGoModProjects(projects []GoModProject) (map[string]Dependency, error)
 }
 
 func LocateNpmPackageLockV3Projects(root string, projects []Project) (map[string]Dependency, error) {
-	nodeModulePrefixRegexp := regexp.MustCompile(`.*node_modules\/`)
 	deps := make(map[string]Dependency, len(projects))
 
 	for _, project := range projects {
 		baseDependencyName := nodeModulePrefixRegexp.ReplaceAllString(project.Name(), "")
 		sourceDir := filepath.Join(root, project.Name())
 		if _, err := os.Stat(sourceDir); os.IsNotExist(err) {
-			// If a direct path to a nested dependency is not found, it was hoisted to the root.
+			// If a direct path to a nested dependency is not found, it was hoisted to the root to
+			// be shared among multiple parent dependencies.
+			//
+			// e.g. If multiple dependencies share a common transitive dependency on `type-fest`, the
+			// path `node_modules/yup/node_modules/type-fest` could become `node_modules/type-fest`
+			// when installed on disk.
 			sourceDir = filepath.Join(root, baseDependencyName)
 		}
 		dep := Dependency{

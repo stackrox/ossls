@@ -9,6 +9,7 @@ import (
 
 func TestProjectsFromNpmLockfileV3(t *testing.T) {
 	actualProjects, err := ProjectsFromNpmLockfileV3("testdata/package-lock.json")
+	require.Nil(t, err)
 
 	expectedProjects := make(map[string]NpmProject, 4)
 	expectedProjects["@aashutoshrathi/word-wrap"] = NpmProject{
@@ -31,8 +32,6 @@ func TestProjectsFromNpmLockfileV3(t *testing.T) {
 		optional: false,
 		version:  "3.8.7",
 	}
-
-	require.Nil(t, err)
 
 	for _, actualProject := range actualProjects {
 		expectedProject, ok := expectedProjects[actualProject.Name()]

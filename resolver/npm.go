@@ -61,7 +61,7 @@ func asNpmProjects(packageLock PackageLockV3) []Project {
 
 		projectSet[pkg] = NpmProject{
 			// Remove the `node_modules/` root directory prefix from each `pkg`
-			name:    strings.Replace(pkg, "node_modules/", "", 1),
+			name:    strings.TrimPrefix(pkg, "node_modules/"),
 			version: entry.Version,
 			// optional packages that are included as dependencies in the build will be declared at the top
 			// level of packageLock.Packages, so we can explicitly mark optional as false here
@@ -69,7 +69,7 @@ func asNpmProjects(packageLock PackageLockV3) []Project {
 		}
 	}
 
-	projectList := make([]Project, 0)
+	projectList := make([]Project, 0, len(projectSet))
 	for _, project := range projectSet {
 		projectList = append(projectList, project)
 	}
