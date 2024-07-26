@@ -1,6 +1,8 @@
 module github.com/stackrox/ossls
 
-go 1.21.9
+go 1.21
+
+toolchain go1.21.9
 
 require (
 	github.com/BurntSushi/toml v1.4.0
