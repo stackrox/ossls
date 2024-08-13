@@ -46,8 +46,9 @@ type PackageLockV3 struct {
 }
 
 type NpmPackage struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Optional bool   `json:"optional"`
 }
 
 func asNpmProjects(packageLock PackageLockV3) []Project {
@@ -61,11 +62,9 @@ func asNpmProjects(packageLock PackageLockV3) []Project {
 
 		projectSet[pkg] = NpmProject{
 			// Remove the `node_modules/` root directory prefix from each `pkg`
-			name:    strings.TrimPrefix(pkg, "node_modules/"),
-			version: entry.Version,
-			// optional packages that are included as dependencies in the build will be declared at the top
-			// level of packageLock.Packages, so we can explicitly mark optional as false here
-			optional: false,
+			name:     strings.TrimPrefix(pkg, "node_modules/"),
+			version:  entry.Version,
+			optional: entry.Optional,
 		}
 	}
 
