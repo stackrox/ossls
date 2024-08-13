@@ -61,6 +61,14 @@ func LocateNpmPackageLockV3Projects(root string, projects []Project) (map[string
 			Version:   project.Version(),
 			SourceDir: sourceDir,
 		}
+
+		// If the dependency is optional and not found, skip adding it, as it may not be installed.
+		// This is common for optional dependencies targeting a platform other
+		// than the host platform.
+		if _, err := os.Stat(sourceDir); os.IsNotExist(err) && project.Optional() {
+			continue
+		}
+
 		deps[baseDependencyName+dep.Version] = dep
 	}
 
