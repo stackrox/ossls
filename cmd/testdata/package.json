@@ -1,0 +1,20 @@
+{
+  "name": "test-package",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Test Author",
+  "contributors": [
+    "Contributor 1",
+    "Contributor 2"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/test/test-package.git"
+  },
+  "devDependencies": {
+    "should-not-be-exported": "1.0.0"
+  },
+  "scripts": {
+    "test": "echo test"
+  }
+}
