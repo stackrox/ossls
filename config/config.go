@@ -17,6 +17,7 @@ type Config struct {
 	Dep   DepConfig   `json:"dep"`
 	GoMod GoModConfig `json:"gomod"`
 	Yarn  YarnConfig  `json:"yarn"`
+	Npm   NpmConfig   `json:"npm"`
 	PatternConfig
 }
 
@@ -32,6 +33,11 @@ type DepConfig struct {
 type YarnConfig struct {
 	NodeModulesDirs []string `json:"node-modules-dirs"`
 	Lockfile        string   `json:"lockfile"`
+}
+
+type NpmConfig struct {
+	NodeModulesDir string `json:"node-modules-dir"`
+	Lockfile       string `json:"lockfile"`
 }
 
 func Load(filename string) (*Config, error) {
