@@ -70,19 +70,19 @@ You can always view help information on the various actions like so:
 
 ```
 $ ossls -help
-Usage of ./ossls:
-  -audit
-        Audit all dependencies.
-  -checksum
-        Calculate checksum for a file.
-  -config string
-        Path to configuration file. (default ".ossls.yml")
-  -list
-        List all dependencies.
-  -scan
-        Scan single dependency.
-  -version
-        Displays the version and exits.
+Usage:
+   [command]
+
+Available Commands:
+  audit       Audit all dependencies
+  help        Help about any command
+  version     Displays the version (development) and exits
+
+Flags:
+  -c, --config string   path to configuration file (default ".ossls.yml")
+  -h, --help            help for this command
+
+Use " [command] --help" for more information about a command.
 ```
 
 ### Auditing Dependencies
