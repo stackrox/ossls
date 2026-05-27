@@ -9,7 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
@@ -117,11 +119,13 @@ func AuditCommand() *cobra.Command {
 				return errors.Wrap(err, "resolving dependencies")
 			}
 
+			exportTime := getExportTimestamp()
+
 			var failures bool
 			for _, dependency := range dependencies {
 				var err error
 				if exportFlag != "" {
-					err = export(dependency, exportFlag)
+					err = export(dependency, exportFlag, exportTime)
 				}
 
 				if err != nil {
@@ -173,6 +177,7 @@ func joinDeps(patterns config.PatternConfig, sets ...map[string]resolver.Depende
 			if err != nil {
 				return nil, errors.Wrapf(err, "finding license files in directory %s", dependency.SourceDir)
 			}
+			sort.Strings(files)
 			dependency.Alias = flattenName(name)
 			dependency.Files = files
 			dependencies = append(dependencies, dependency)
@@ -185,16 +190,26 @@ func joinDeps(patterns config.PatternConfig, sets ...map[string]resolver.Depende
 	return dependencies, nil
 }
 
-func export(dependency resolver.Dependency, destination string) error {
-	if err := os.MkdirAll(filepath.Join(destination, dependency.Alias), 0755); err != nil {
+// getExportTimestamp returns the timestamp to use for exported files.
+// If SOURCE_DATE_EPOCH is set and valid, uses that timestamp.
+// Otherwise, returns the current time.
+func getExportTimestamp() time.Time {
+	if epoch := os.Getenv("SOURCE_DATE_EPOCH"); epoch != "" {
+		if sec, err := strconv.ParseInt(epoch, 10, 64); err == nil {
+			return time.Unix(sec, 0)
+		}
+	}
+	return time.Now()
+}
+
+func export(dependency resolver.Dependency, destination string, timestamp time.Time) error {
+	destDir := filepath.Join(destination, dependency.Alias)
+	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return err
 	}
 
 	for _, file := range dependency.Files {
-		if err := exportDependencyFile(
-			file,
-			filepath.Join(destination, dependency.Alias),
-		); err != nil {
+		if err := exportDependencyFile(file, destDir, timestamp); err != nil {
 			return err
 		}
 	}
@@ -209,6 +224,13 @@ func exportManifest(destination string, dependencies []resolver.Dependency) erro
 		return err
 	}
 	defer file.Close()
+
+	sort.Slice(dependencies, func(i, j int) bool {
+		if !strings.EqualFold(dependencies[i].Name, dependencies[j].Name) {
+			return strings.ToLower(dependencies[i].Name) < strings.ToLower(dependencies[j].Name)
+		}
+		return dependencies[i].Version < dependencies[j].Version
+	})
 
 	fmt.Fprintln(file, "Name,Version,Directory")
 	for _, dep := range dependencies {
@@ -244,14 +266,23 @@ func flattenName(name string) string {
 	return strings.Replace(name, "/", "-", -1)
 }
 
-func exportDependencyFile(src, dstDir string) error {
+func exportDependencyFile(src, dstDir string, timestamp time.Time) error {
 	dstFile := filepath.Base(src)
+	var dstPath string
 	if strings.ToLower(dstFile) == "package.json" {
 		// Do not directly copy the package json file to avoid false positives
 		// from image scanners for developer dependencies -- only export a subset of fields.
-		return copyPackageJsonContents(src, filepath.Join(dstDir, "license-info.json"))
+		dstPath = filepath.Join(dstDir, "license-info.json")
+		if err := copyPackageJsonContents(src, dstPath); err != nil {
+			return err
+		}
+	} else {
+		dstPath = filepath.Join(dstDir, dstFile)
+		if err := copyFileContents(src, dstPath); err != nil {
+			return err
+		}
 	}
-	return copyFileContents(src, filepath.Join(dstDir, dstFile))
+	return os.Chtimes(dstPath, timestamp, timestamp)
 }
 
 func copyJsonFieldIfExists(fieldName string, in, out map[string]interface{}) {

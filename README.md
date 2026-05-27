@@ -162,6 +162,19 @@ $ ossls -audit
 ossls: violations found
 ```
 
+#### Reproducible Builds
+
+For reproducible builds, set the `SOURCE_DATE_EPOCH` environment variable to normalize file timestamps in exported output:
+
+```bash
+export SOURCE_DATE_EPOCH=1609459200  # 2021-01-01 00:00:00 UTC
+ossls audit --export THIRD_PARTY_NOTICES
+```
+
+This ensures that running `ossls audit --export` multiple times with identical inputs produces byte-for-byte identical output, enabling build verification for compliance.
+
+When `SOURCE_DATE_EPOCH` is not set, files are exported with current timestamps.
+
 [circleci-badge]:      https://circleci.com/gh/stackrox/ossls.svg?&style=shield&circle-token=5ac8a87fbadae84c41f8c1fc868ad5d8ba85c90e
 [circleci-link]:       https://circleci.com/gh/stackrox/ossls/tree/master
 [github-release-link]: https://github.com/stackrox/ossls/releases/latest
